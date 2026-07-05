@@ -143,6 +143,17 @@ router.patch(
     const user = await prisma.user.update({
       where: { id: req.user!.userId },
       data,
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        avatarUrl: true,
+        businessProfile: true,
+        createdAt: true,
+      },
     });
     return sendSuccess(res, user);
   })

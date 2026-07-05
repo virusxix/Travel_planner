@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Plus, Building2, LayoutDashboard, BedDouble, CalendarCheck, BarChart3 } from "lucide-react";
+import { Plus, Building2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth";
 import { DashboardShell, DashboardSidebar } from "@/components/layout/dashboard-shell";
@@ -15,13 +15,7 @@ import type { Property } from "@/types";
 import { DEMO_HOST_PROPERTIES, useHostDemo } from "@/lib/business-demo";
 import { DemoDataBanner } from "@/components/shared/demo-data-banner";
 import { HostListingGuide } from "@/components/business/host-listing-guide";
-
-const nav = [
-  { href: "/business", label: "Overview", icon: LayoutDashboard },
-  { href: "/business/properties", label: "Properties", icon: Building2 },
-  { href: "/business#bookings", label: "Bookings", icon: CalendarCheck },
-  { href: "/business#analytics", label: "Analytics", icon: BarChart3 },
-];
+import { BUSINESS_NAV } from "@/lib/business-nav";
 
 export default function BusinessPropertiesPage() {
   const { user } = useAuthStore();
@@ -45,7 +39,7 @@ export default function BusinessPropertiesPage() {
 
   return (
     <DashboardShell
-      sidebar={<DashboardSidebar items={nav} title="Business Owner" />}
+      sidebar={<DashboardSidebar items={BUSINESS_NAV} title="Business Owner" />}
       heading="Your properties"
       subheading="Create and manage accommodations"
     >

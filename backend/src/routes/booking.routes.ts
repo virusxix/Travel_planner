@@ -83,7 +83,7 @@ router.get(
     const bookings = await prisma.booking.findMany({
       where: { propertyId: { in: properties.map((p) => p.id) } },
       include: {
-        user: { select: { firstName: true, lastName: true, email: true } },
+        user: { select: { firstName: true, lastName: true, email: true, phone: true } },
         room: true,
         property: { select: { name: true } },
       },

@@ -5,6 +5,7 @@ import { UserRole } from "@prisma/client";
 import { env } from "../config/env.js";
 import { prisma } from "../lib/prisma.js";
 import { AuthPayload } from "../middleware/auth.js";
+import { AppError } from "../utils/appError.js";
 
 const SALT_ROUNDS = 12;
 
@@ -49,7 +50,7 @@ export async function registerUser(data: {
   businessName?: string;
 }) {
   const existing = await prisma.user.findUnique({ where: { email: data.email } });
-  if (existing) throw new Error("Email already registered");
+  if (existing) throw new AppError("Email already registered", 409, "EMAIL_TAKEN");
 
   const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
 
@@ -78,9 +79,9 @@ export async function registerUser(data: {
 export async function loginUser(email: string, password: string) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    throw new Error("Invalid email or password");
+    throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
   }
-  if (!user.isActive) throw new Error("Account suspended");
+  if (!user.isActive) throw new AppError("Account suspended", 403, "SUSPENDED");
   return user;
 }
 
@@ -104,7 +105,7 @@ export async function resetPassword(token: string, newPassword: string) {
   const record = await prisma.passwordReset.findFirst({
     where: { tokenHash, used: false, expiresAt: { gt: new Date() } },
   });
-  if (!record) throw new Error("Invalid or expired reset token");
+  if (!record) throw new AppError("Invalid or expired reset token", 400, "INVALID_RESET_TOKEN");
 
   const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
   await prisma.$transaction([

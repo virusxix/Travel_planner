@@ -5,8 +5,6 @@ import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   ChevronLeft,
   ChevronRight,
@@ -60,29 +58,43 @@ export default function HomePage() {
   const hasStays = (properties?.length ?? 0) > 0;
 
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-    const mm = gsap.matchMedia();
-    mm.add("(prefers-reduced-motion: no-preference)", () => {
-      gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
+    // Lazy-load gsap so ~40 kB of animation code stays out of the initial bundle.
+    let mm: { revert: () => void } | undefined;
+    let cancelled = false;
+    (async () => {
+      const [{ default: gsap }, { ScrollTrigger }] = await Promise.all([
+        import("gsap"),
+        import("gsap/ScrollTrigger"),
+      ]);
+      if (cancelled) return;
+      gsap.registerPlugin(ScrollTrigger);
+      const media = gsap.matchMedia();
+      mm = media;
+      media.add("(prefers-reduced-motion: no-preference)", () => {
+        gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
+          gsap.fromTo(
+            el,
+            { autoAlpha: 0, y: 48 },
+            {
+              autoAlpha: 1,
+              y: 0,
+              duration: 1,
+              ease: "power3.out",
+              scrollTrigger: { trigger: el, start: "top 85%" },
+            }
+          );
+        });
         gsap.fromTo(
-          el,
-          { autoAlpha: 0, y: 48 },
-          {
-            autoAlpha: 1,
-            y: 0,
-            duration: 1,
-            ease: "power3.out",
-            scrollTrigger: { trigger: el, start: "top 85%" },
-          }
+          "[data-hero-ui]",
+          { autoAlpha: 0, y: 24 },
+          { autoAlpha: 1, y: 0, duration: 1.2, delay: 0.9, ease: "power3.out" }
         );
       });
-      gsap.fromTo(
-        "[data-hero-ui]",
-        { autoAlpha: 0, y: 24 },
-        { autoAlpha: 1, y: 0, duration: 1.2, delay: 0.9, ease: "power3.out" }
-      );
-    });
-    return () => mm.revert();
+    })();
+    return () => {
+      cancelled = true;
+      mm?.revert();
+    };
   }, []);
 
   function scrollDestinations(dir: "left" | "right") {

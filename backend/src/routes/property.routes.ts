@@ -28,12 +28,30 @@ router.get(
     const limitNum = Math.min(50, Math.max(1, parseInt(limit as string, 10)));
     const skip = (pageNum - 1) * limitNum;
 
+    const min = minPrice ? parseFloat(minPrice as string) : undefined;
+    const max = maxPrice ? parseFloat(maxPrice as string) : undefined;
+    const hasMin = min !== undefined && Number.isFinite(min);
+    const hasMax = max !== undefined && Number.isFinite(max);
+
     const where: Prisma.PropertyWhereInput = {
       status: "APPROVED",
       ...(country && { country: { contains: country as string, mode: "insensitive" } }),
       ...(city && { city: { contains: city as string, mode: "insensitive" } }),
       ...(type && { type: type as Prisma.EnumPropertyTypeFilter }),
       ...(minRating && { avgRating: { gte: parseFloat(minRating as string) } }),
+      // ponytail: filters properties that have a room within [min,max]. Exact
+      // "cheapest room in range" would need a raw aggregate query; `some` keeps
+      // pagination + total counts correct, which was the actual bug.
+      ...((hasMin || hasMax) && {
+        rooms: {
+          some: {
+            basePrice: {
+              ...(hasMin && { gte: min }),
+              ...(hasMax && { lte: max }),
+            },
+          },
+        },
+      }),
       ...(search && {
         OR: [
           { name: { contains: search as string, mode: "insensitive" } },
@@ -63,17 +81,7 @@ router.get(
       prisma.property.count({ where }),
     ]);
 
-    let filtered = properties;
-    if (minPrice || maxPrice) {
-      const min = minPrice ? parseFloat(minPrice as string) : 0;
-      const max = maxPrice ? parseFloat(maxPrice as string) : Infinity;
-      filtered = properties.filter((p) => {
-        const price = p.rooms[0] ? Number(p.rooms[0].basePrice) : 0;
-        return price >= min && price <= max;
-      });
-    }
-
-    return sendSuccess(res, filtered, 200, {
+    return sendSuccess(res, properties, 200, {
       page: pageNum,
       limit: limitNum,
       total,

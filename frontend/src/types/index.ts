@@ -53,6 +53,7 @@ export interface Booking {
   paymentExpiresAt?: string | null;
   property?: Property & { images?: { url: string }[] };
   room?: Room;
+  user?: { firstName: string; lastName: string; email: string; phone?: string };
 }
 
 export interface HiddenGem {

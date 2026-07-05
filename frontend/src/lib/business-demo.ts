@@ -95,6 +95,7 @@ export const DEMO_HOST_BOOKINGS: Booking[] = [
     finalTotal: 126,
     guests: 2,
     property: { ...DEMO_HOST_PROPERTIES[0], images: DEMO_HOST_PROPERTIES[0].images },
+    user: { firstName: "Mia", lastName: "Carter", email: "mia.carter@example.com", phone: "+1-415-555-0182" },
   },
   {
     id: "demo-b2",
@@ -105,6 +106,7 @@ export const DEMO_HOST_BOOKINGS: Booking[] = [
     finalTotal: 114,
     guests: 2,
     property: { ...DEMO_HOST_PROPERTIES[0], images: DEMO_HOST_PROPERTIES[0].images },
+    user: { firstName: "Liam", lastName: "Nguyen", email: "liam.nguyen@example.com", phone: "+65-8123-4567" },
   },
   {
     id: "demo-b3",
@@ -115,6 +117,7 @@ export const DEMO_HOST_BOOKINGS: Booking[] = [
     finalTotal: 272,
     guests: 2,
     property: { ...DEMO_HOST_PROPERTIES[1], images: DEMO_HOST_PROPERTIES[1].images },
+    user: { firstName: "Sofia", lastName: "Rossi", email: "sofia.rossi@example.com", phone: "+39-06-555-0143" },
   },
 ];
 
@@ -135,6 +138,11 @@ export const DEMO_HOST_ANALYTICS = {
     { type: "TWIN", count: 1 },
   ],
 };
+
+export function findDemoProperty(id: string | undefined | null): Property | undefined {
+  if (!id) return undefined;
+  return DEMO_HOST_PROPERTIES.find((p) => p.id === id);
+}
 
 export function useHostDemo(
   properties: Property[] | undefined | null,

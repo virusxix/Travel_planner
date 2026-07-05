@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { api } from "@/lib/api";
 import { PropertyForm, propertyToForm, type PropertyFormValues } from "@/components/business/property-form";
 import { useToast } from "@/components/shared/toast-provider";
+import { findDemoProperty } from "@/lib/business-demo";
 import type { Property } from "@/types";
 
 export default function EditPropertyPage() {
@@ -15,10 +16,16 @@ export default function EditPropertyPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
 
-  const { data: property, isLoading } = useQuery({
+  const demoProperty = findDemoProperty(id);
+
+  const { data: fetchedProperty, isLoading } = useQuery({
     queryKey: ["property", id],
     queryFn: () => api<Property>(`/properties/${id}`),
+    enabled: !demoProperty,
   });
+
+  const property = fetchedProperty ?? demoProperty;
+  const isDemoProperty = !fetchedProperty && !!demoProperty;
 
   const mutation = useMutation({
     mutationFn: (body: PropertyFormValues) =>
@@ -51,11 +58,22 @@ export default function EditPropertyPage() {
           <ArrowLeft className="h-4 w-4" /> Back
         </Link>
         <h1 className="font-display text-2xl font-bold mb-6">Edit property</h1>
+        {isDemoProperty && (
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <span className="font-semibold">Demo listing</span> — this is example data. Connect a real property to edit and save changes.
+          </div>
+        )}
         <PropertyForm
           initial={propertyToForm(property)}
           submitLabel="Save changes"
           loading={mutation.isPending}
-          onSubmit={(v) => mutation.mutate(v)}
+          onSubmit={(v) => {
+            if (isDemoProperty) {
+              toast({ title: "Demo listing", description: "Connect a real property to edit.", variant: "info" });
+              return;
+            }
+            mutation.mutate(v);
+          }}
         />
       </div>
     </div>

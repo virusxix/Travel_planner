@@ -15,6 +15,7 @@ import { RoomForm, type RoomFormValues } from "@/components/business/room-form";
 import { PropertyStatusBanner } from "@/components/business/property-status-banner";
 import { useToast } from "@/components/shared/toast-provider";
 import { formatCurrency } from "@/lib/utils";
+import { findDemoProperty } from "@/lib/business-demo";
 import type { Property, Room } from "@/types";
 
 interface RoomStats {
@@ -24,10 +25,11 @@ interface RoomStats {
   occupancyPercent: number;
 }
 
-function RoomStatsCard({ roomId }: { roomId: string }) {
+function RoomStatsCard({ roomId, enabled = true }: { roomId: string; enabled?: boolean }) {
   const { data } = useQuery({
     queryKey: ["room-stats", roomId],
     queryFn: () => api<RoomStats>(`/rooms/${roomId}/stats`),
+    enabled,
   });
   if (!data) return null;
   return (
@@ -58,10 +60,22 @@ export default function OwnerPropertyDetailPage() {
   const [deleteRoom, setDeleteRoom] = useState<Room | null>(null);
   const [deleteProperty, setDeleteProperty] = useState(false);
 
-  const { data: property, isLoading } = useQuery({
+  const demoProperty = findDemoProperty(id);
+
+  const { data: fetchedProperty, isLoading } = useQuery({
     queryKey: ["property", id],
     queryFn: () => api<Property>(`/properties/${id}`),
+    enabled: !demoProperty,
   });
+
+  const property = fetchedProperty ?? demoProperty;
+  const isDemoProperty = !fetchedProperty && !!demoProperty;
+
+  function blockDemo() {
+    if (!isDemoProperty) return false;
+    toast({ title: "Demo listing", description: "Connect a real property to edit.", variant: "info" });
+    return true;
+  }
 
   const createRoom = useMutation({
     mutationFn: (body: RoomFormValues) =>
@@ -149,9 +163,12 @@ export default function OwnerPropertyDetailPage() {
           <div>
             <h1 className="font-display text-2xl font-bold">{property.name}</h1>
             <p className="text-muted text-sm mt-1">{property.city}, {property.country}</p>
-            <Badge className="mt-2" variant={property.status === "APPROVED" ? "success" : "warning"}>
-              {property.status}
-            </Badge>
+            <div className="mt-2 flex items-center gap-2">
+              <Badge variant={property.status === "APPROVED" ? "success" : "warning"}>
+                {property.status}
+              </Badge>
+              {isDemoProperty && <Badge variant="outline">Example</Badge>}
+            </div>
           </div>
           <div className="flex gap-2">
             <Link href={`/business/properties/${id}/edit`}>
@@ -159,7 +176,7 @@ export default function OwnerPropertyDetailPage() {
                 <Pencil className="h-4 w-4" /> Edit
               </Button>
             </Link>
-            <Button variant="ghost" size="sm" className="rounded-xl text-red-400" onClick={() => setDeleteProperty(true)}>
+            <Button variant="ghost" size="sm" className="rounded-xl text-red-400" onClick={() => { if (!blockDemo()) setDeleteProperty(true); }}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -171,7 +188,7 @@ export default function OwnerPropertyDetailPage() {
           <Button
             className="mb-6 rounded-2xl w-full sm:w-auto"
             disabled={!canSubmit || submitProperty.isPending}
-            onClick={() => submitProperty.mutate()}
+            onClick={() => { if (!blockDemo()) submitProperty.mutate(); }}
           >
             Submit for admin review
           </Button>
@@ -188,8 +205,8 @@ export default function OwnerPropertyDetailPage() {
           <h2 className="font-semibold mb-4">Images</h2>
           <ImageGallery
             images={images}
-            canDelete
-            onDelete={(imageId) => deleteImage.mutate(imageId)}
+            canDelete={!isDemoProperty}
+            onDelete={(imageId) => { if (!blockDemo()) deleteImage.mutate(imageId); }}
           />
         </GlassCard>
 
@@ -197,7 +214,7 @@ export default function OwnerPropertyDetailPage() {
           <h2 className="font-display text-xl font-bold flex items-center gap-2">
             <BedDouble className="h-5 w-5 text-violet-400" /> Rooms
           </h2>
-          <Button size="sm" className="rounded-xl gap-1" onClick={() => { setEditRoom(null); setRoomModal("add"); }}>
+          <Button size="sm" className="rounded-xl gap-1" onClick={() => { if (blockDemo()) return; setEditRoom(null); setRoomModal("add"); }}>
             <Plus className="h-4 w-4" /> Add room
           </Button>
         </div>
@@ -211,15 +228,15 @@ export default function OwnerPropertyDetailPage() {
                   <p className="text-xs text-muted">{room.roomType} · {room.capacity} guests · {formatCurrency(Number(room.basePrice))}/night</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="secondary" className="rounded-lg" onClick={() => { setEditRoom(room); setRoomModal("edit"); }}>
+                  <Button size="sm" variant="secondary" className="rounded-lg" onClick={() => { if (blockDemo()) return; setEditRoom(room); setRoomModal("edit"); }}>
                     Edit
                   </Button>
-                  <Button size="sm" variant="ghost" className="rounded-lg text-red-400" onClick={() => setDeleteRoom(room)}>
+                  <Button size="sm" variant="ghost" className="rounded-lg text-red-400" onClick={() => { if (!blockDemo()) setDeleteRoom(room); }}>
                     Delete
                   </Button>
                 </div>
               </div>
-              <RoomStatsCard roomId={room.id} />
+              <RoomStatsCard roomId={room.id} enabled={!isDemoProperty} />
             </GlassCard>
           ))}
         </div>

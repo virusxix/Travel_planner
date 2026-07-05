@@ -7,7 +7,7 @@ const STATUS_HELP: Record<string, { title: string; detail: string }> = {
     detail: "Add at least one room, then submit for admin review.",
   },
   PENDING_REVIEW: {
-    title: "Pending review",
+    title: "Submitted · typical review 1–3 days",
     detail: "An admin will approve or request changes. You cannot edit while pending.",
   },
   APPROVED: {

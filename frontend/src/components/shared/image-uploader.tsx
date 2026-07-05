@@ -78,7 +78,9 @@ export function ImageUploader({
         )}
       </div>
       {error && <p className="text-xs text-red-600">{error}</p>}
-      <p className="text-xs text-slate-500">Or paste URLs below after uploading elsewhere.</p>
+      <p className="text-xs text-slate-500">
+        JPG or PNG, up to {max} photos. Your first photo is used as the cover.
+      </p>
     </div>
   );
 }

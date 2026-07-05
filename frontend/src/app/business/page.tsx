@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import {
-  LayoutDashboard,
   Building2,
   BedDouble,
   CalendarCheck,
@@ -40,6 +39,7 @@ import {
 import { DemoDataBanner } from "@/components/shared/demo-data-banner";
 import { HostListingGuide } from "@/components/business/host-listing-guide";
 import { useToast } from "@/components/shared/toast-provider";
+import { BUSINESS_NAV } from "@/lib/business-nav";
 
 interface OwnerAnalytics {
   revenue: number;
@@ -49,13 +49,6 @@ interface OwnerAnalytics {
   bookingTrends: { month: string; count: number }[];
   popularRoomTypes: { type: string; count: number }[];
 }
-
-const nav = [
-  { href: "/business", label: "Overview", icon: LayoutDashboard },
-  { href: "/business/properties", label: "Properties", icon: Building2 },
-  { href: "/business#bookings", label: "Bookings", icon: CalendarCheck },
-  { href: "/business#analytics", label: "Analytics", icon: BarChart3 },
-];
 
 export default function BusinessDashboard() {
   const { user } = useAuthStore();
@@ -115,7 +108,7 @@ export default function BusinessDashboard() {
 
   return (
     <DashboardShell
-      sidebar={<DashboardSidebar items={nav} title="Business Owner" />}
+      sidebar={<DashboardSidebar items={BUSINESS_NAV} title="Business Owner" />}
       heading="Business Dashboard"
       subheading="Manage properties, rooms, and revenue"
     >
@@ -136,7 +129,7 @@ export default function BusinessDashboard() {
       ) : (
         <>
       <div id="analytics" className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4 mb-10">
-        <StatWidget label="Revenue" value={formatCurrency(displayAnalytics.revenue ?? 0)} icon={BarChart3} trend="up" change="+12% vs last month" />
+        <StatWidget label="Gross revenue" value={formatCurrency(displayAnalytics.revenue ?? 0)} icon={BarChart3} trend="up" change="Before 5% fee · see Earnings" />
         <StatWidget label="Occupancy" value={`${displayAnalytics.occupancyRate ?? 0}%`} icon={BedDouble} trend="neutral" />
         <StatWidget label="Bookings" value={displayAnalytics.totalBookings ?? 0} icon={CalendarCheck} trend="up" change={`${displayAnalytics.pendingBookings ?? 0} pending`} />
         <StatWidget label="Properties" value={displayProperties.length ?? 0} icon={Building2} trend="neutral" change={`${totalRooms} rooms`} />
@@ -181,7 +174,19 @@ export default function BusinessDashboard() {
       </div>
 
       <section id="bookings" className="mb-10">
-        <h2 className="font-display text-xl font-bold mb-4">Reservations</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-xl font-bold">Reservations</h2>
+          <Link href="/business/bookings">
+            <Button size="sm" variant="secondary" className="rounded-xl">View all</Button>
+          </Link>
+        </div>
+        {displayBookings.length === 0 ? (
+          <GlassCard hover={false} className="p-10 text-center">
+            <CalendarCheck className="h-10 w-10 mx-auto text-teal-300" />
+            <p className="mt-3 font-display font-semibold">No reservations yet</p>
+            <p className="text-sm text-muted mt-1">Bookings from travelers on your live listings will appear here.</p>
+          </GlassCard>
+        ) : (
         <div className="space-y-3">
           {displayBookings.map((b) => (
             <GlassCard key={b.id} hover={false} className="p-5 flex flex-wrap items-center justify-between gap-4">
@@ -198,6 +203,7 @@ export default function BusinessDashboard() {
             </GlassCard>
           ))}
         </div>
+        )}
       </section>
 
       <section id="properties">
