@@ -38,7 +38,7 @@ export function Modal({
                 </Dialog.Description>
               )}
             </div>
-            <Dialog.Close className="rounded-xl p-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <Dialog.Close className="rounded-xl p-2 text-slate-600 hover:bg-slate-100 transition-colors">
               <X className="h-4 w-4" />
             </Dialog.Close>
           </div>

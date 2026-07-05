@@ -20,6 +20,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import type { Property } from "@/types";
+import {
+  DEMO_ADMIN_ANALYTICS,
+  DEMO_ADMIN_PENDING,
+  DEMO_ADMIN_USERS,
+  useAdminDemo,
+} from "@/lib/admin-demo";
+import { DemoDataBanner } from "@/components/shared/demo-data-banner";
 
 interface AdminAnalytics {
   totalUsers: number;
@@ -57,13 +64,13 @@ export default function AdminDashboard() {
     enabled: user?.role === "ADMIN",
   });
 
-  const { data: pending } = useQuery({
+  const { data: pending, isFetched: pendingFetched, isError: pendingError } = useQuery({
     queryKey: ["pending-properties"],
     queryFn: () => api<Property[]>("/admin/properties/pending"),
     enabled: user?.role === "ADMIN",
   });
 
-  const { data: users } = useQuery({
+  const { data: users, isFetched: usersFetched, isError: usersError } = useQuery({
     queryKey: ["admin-users"],
     queryFn: () => api<{ id: string; email: string; role: string; firstName: string; lastName: string; isActive: boolean }[]>("/admin/users"),
     enabled: user?.role === "ADMIN",
@@ -83,18 +90,26 @@ export default function AdminDashboard() {
 
   if (!user || user.role !== "ADMIN") return null;
 
+  const demoPending = useAdminDemo(pending, { isFetched: pendingFetched, isError: pendingError });
+  const demoUsers = useAdminDemo(users, { isFetched: usersFetched, isError: usersError });
+  const showDemoBanner = demoPending || demoUsers;
+  const displayAnalytics = analytics?.totalUsers ? analytics : DEMO_ADMIN_ANALYTICS;
+  const displayPending = demoPending ? DEMO_ADMIN_PENDING : (pending ?? []);
+  const displayUsers = demoUsers ? DEMO_ADMIN_USERS : (users ?? []);
+
   return (
     <DashboardShell
       sidebar={<DashboardSidebar items={nav} title="Administrator" />}
       heading="Admin Dashboard"
       subheading="Platform oversight and verification"
     >
+      {showDemoBanner && <DemoDataBanner />}
       <div id="analytics" className="grid gap-6 sm:grid-cols-2 xl:grid-cols-5 mb-10">
-        <StatWidget label="Users" value={analytics?.totalUsers ?? 0} icon={Users} />
-        <StatWidget label="Properties" value={analytics?.totalProperties ?? 0} icon={ShieldCheck} />
-        <StatWidget label="Bookings" value={analytics?.totalBookings ?? 0} icon={BarChart3} />
-        <StatWidget label="Pending" value={analytics?.pendingProperties ?? 0} icon={ShieldCheck} trend="neutral" />
-        <StatWidget label="Platform revenue" value={formatCurrency(analytics?.platformRevenue ?? 0)} icon={BarChart3} trend="up" />
+        <StatWidget label="Users" value={displayAnalytics.totalUsers ?? 0} icon={Users} />
+        <StatWidget label="Properties" value={displayAnalytics.totalProperties ?? 0} icon={ShieldCheck} />
+        <StatWidget label="Bookings" value={displayAnalytics.totalBookings ?? 0} icon={BarChart3} />
+        <StatWidget label="Pending" value={displayAnalytics.pendingProperties ?? 0} icon={ShieldCheck} trend="neutral" />
+        <StatWidget label="Platform revenue" value={formatCurrency(displayAnalytics.platformRevenue ?? 0)} icon={BarChart3} trend="up" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2 mb-10">
@@ -103,8 +118,8 @@ export default function AdminDashboard() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={analytics?.usersByRole ?? []} dataKey="count" nameKey="role" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4}>
-                  {(analytics?.usersByRole ?? []).map((_, i) => (
+                <Pie data={displayAnalytics.usersByRole ?? []} dataKey="count" nameKey="role" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4}>
+                  {(displayAnalytics.usersByRole ?? []).map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
@@ -120,8 +135,8 @@ export default function AdminDashboard() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={analytics?.bookingsByStatus ?? []} dataKey="count" nameKey="status" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4}>
-                  {(analytics?.bookingsByStatus ?? []).map((_, i) => (
+                <Pie data={displayAnalytics.bookingsByStatus ?? []} dataKey="count" nameKey="status" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4}>
+                  {(displayAnalytics.bookingsByStatus ?? []).map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
@@ -135,11 +150,11 @@ export default function AdminDashboard() {
 
       <section id="approvals" className="mb-10">
         <h2 className="font-display text-xl font-bold mb-4">Property approvals</h2>
-        {pending?.length === 0 ? (
+        {!displayPending.length ? (
           <GlassCard hover={false} className="p-10 text-center text-muted">No pending listings.</GlassCard>
         ) : (
           <div className="space-y-4">
-            {pending?.map((p) => (
+            {displayPending.map((p) => (
               <GlassCard key={p.id} hover={false} className="p-6">
                 <div className="flex flex-wrap justify-between gap-4">
                   <div>
@@ -149,10 +164,12 @@ export default function AdminDashboard() {
                   </div>
                   <Badge variant="warning">PENDING</Badge>
                 </div>
-                <div className="mt-4 flex gap-2">
-                  <Button size="sm" onClick={() => verifyMutation.mutate({ id: p.id, status: "APPROVED" })}>Approve</Button>
-                  <Button size="sm" variant="destructive" onClick={() => verifyMutation.mutate({ id: p.id, status: "REJECTED" })}>Reject</Button>
-                </div>
+                {!demoPending && (
+                  <div className="mt-4 flex gap-2">
+                    <Button size="sm" onClick={() => verifyMutation.mutate({ id: p.id, status: "APPROVED" })}>Approve</Button>
+                    <Button size="sm" variant="destructive" onClick={() => verifyMutation.mutate({ id: p.id, status: "REJECTED" })}>Reject</Button>
+                  </div>
+                )}
               </GlassCard>
             ))}
           </div>
@@ -163,7 +180,7 @@ export default function AdminDashboard() {
         <h2 className="font-display text-xl font-bold mb-4">User management</h2>
         <DataTable
           keyField="id"
-          data={users ?? []}
+          data={displayUsers}
           columns={[
             { key: "firstName", header: "Name", render: (r) => `${r.firstName} ${r.lastName}` },
             { key: "email", header: "Email" },
@@ -180,7 +197,7 @@ export default function AdminDashboard() {
           ]}
         />
         <p className="mt-4 text-sm text-muted">
-          Total booking volume: {formatCurrency(analytics?.totalRevenue ?? 0)}
+          Total booking volume: {formatCurrency(displayAnalytics.totalRevenue ?? 0)}
         </p>
       </section>
     </DashboardShell>

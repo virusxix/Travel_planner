@@ -15,7 +15,7 @@ export function HeroSearch() {
     e.preventDefault();
     const q = new URLSearchParams();
     if (destination) q.set("city", destination);
-    router.push(`/search?${q}`);
+    router.push(`/hidden-gems?${q}`);
   }
 
   return (
@@ -25,7 +25,7 @@ export function HeroSearch() {
       transition={{ delay: 0.15 }}
       className="max-w-xl mx-auto"
     >
-      <form onSubmit={handleSearch} className="glass rounded-[1.5rem] p-2 glow-border">
+      <form onSubmit={handleSearch} className="y-card rounded-[1.5rem] p-2 glow-border">
         <div className="flex items-center gap-2 px-2">
           <button type="button" className="icon-btn-glass shrink-0">
             <Plus className="h-4 w-4" />
@@ -48,8 +48,8 @@ export function HeroSearch() {
         {["Chiang Mai", "Hoi An", "Pai"].map((city) => (
           <Link
             key={city}
-            href={`/search?city=${encodeURIComponent(city)}`}
-            className="pill-inactive rounded-full px-4 py-2 text-xs font-medium hover:bg-white/10"
+            href={`/hidden-gems?city=${encodeURIComponent(city)}`}
+            className="pill-inactive rounded-full px-4 py-2 text-xs font-medium"
           >
             {city}
           </Link>

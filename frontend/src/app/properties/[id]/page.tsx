@@ -38,7 +38,7 @@ export default function PropertyDetailPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-surface p-8 flex items-center justify-center">
-        <div className="w-full max-w-md h-[420px] rounded-[1.75rem] bg-white/5 animate-pulse" />
+        <div className="w-full max-w-md h-[420px] rounded-[1.75rem] bg-slate-200 animate-pulse" />
       </div>
     );
   }

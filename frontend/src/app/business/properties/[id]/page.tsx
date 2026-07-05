@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { ImageGallery } from "@/components/shared/image-uploader";
 import { RoomForm, type RoomFormValues } from "@/components/business/room-form";
+import { PropertyStatusBanner } from "@/components/business/property-status-banner";
 import { useToast } from "@/components/shared/toast-provider";
 import { formatCurrency } from "@/lib/utils";
 import type { Property, Room } from "@/types";
@@ -112,8 +113,10 @@ export default function OwnerPropertyDetailPage() {
     mutationFn: () => api(`/properties/${id}/submit`, { method: "POST" }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["property", id] });
-      toast({ title: "Submitted for review", variant: "success" });
+      qc.invalidateQueries({ queryKey: ["owner-properties"] });
+      toast({ title: "Submitted for review", description: "An admin will review your listing.", variant: "success" });
     },
+    onError: (e: Error) => toast({ title: "Cannot submit", description: e.message, variant: "error" }),
   });
 
   const deleteImage = useMutation({
@@ -122,7 +125,7 @@ export default function OwnerPropertyDetailPage() {
   });
 
   if (isLoading) {
-    return <div className="min-h-screen bg-surface p-8"><div className="h-64 rounded-2xl bg-white/5 animate-pulse max-w-3xl mx-auto" /></div>;
+    return <div className="min-h-screen bg-surface p-8"><div className="h-64 rounded-2xl bg-slate-200 animate-pulse max-w-3xl mx-auto" /></div>;
   }
 
   if (!property) {
@@ -133,6 +136,7 @@ export default function OwnerPropertyDetailPage() {
     id: (img as { id?: string }).id ?? `img-${i}`,
     url: img.url,
   }));
+  const canSubmit = (property.rooms?.length ?? 0) > 0;
 
   return (
     <div className="min-h-screen bg-surface px-4 py-8 pb-24">
@@ -161,8 +165,14 @@ export default function OwnerPropertyDetailPage() {
           </div>
         </div>
 
+        <PropertyStatusBanner property={property} />
+
         {property.status === "DRAFT" && (
-          <Button className="mb-6 rounded-2xl w-full sm:w-auto" onClick={() => submitProperty.mutate()}>
+          <Button
+            className="mb-6 rounded-2xl w-full sm:w-auto"
+            disabled={!canSubmit || submitProperty.isPending}
+            onClick={() => submitProperty.mutate()}
+          >
             Submit for admin review
           </Button>
         )}

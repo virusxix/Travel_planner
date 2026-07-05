@@ -2,27 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
-import { Compass, Sun, Moon } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth";
 import { cn } from "@/lib/utils";
+import { isNightRoute } from "@/lib/theme-routes";
+import { BackButton, HomeButton } from "@/components/layout/back-button";
 
 const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/#about", label: "How It Works" },
-  { href: "/hidden-gems", label: "Our Offers" },
-  { href: "/search", label: "Top Destination" },
+  { href: "/hidden-gems", label: "Experiences" },
+  { href: "/planner", label: "Planner" },
+  { href: "/#about", label: "About" },
 ];
 
-export function Navbar() {
+export function Navbar({ compact = false }: { compact?: boolean }) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  const showBack = pathname !== "/";
+  const isHome = pathname === "/";
+  // dark chrome on all night routes; transparent only on the home hero
+  const isDark = isNightRoute(pathname);
 
   const dashboardHref =
     user?.role === "ADMIN"
@@ -33,76 +31,108 @@ export function Navbar() {
           ? "/dashboard"
           : null;
 
-  const isHome = pathname === "/";
-
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 px-4 py-4 md:px-8",
-        isHome ? "bg-transparent absolute inset-x-0" : "glass-strong"
+        "z-50 bg-transparent px-3 pt-3 sm:px-5",
+        isHome ? "absolute inset-x-0 top-0" : "sticky top-0"
       )}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_4px_14px_rgba(29,133,228,0.4)]">
-            <Compass className="h-5 w-5" />
-          </div>
-          <span className="font-display text-lg font-extrabold tracking-tight text-foreground">
-            HIDDEN<span className="text-brand-500">STAY</span>
-          </span>
-        </Link>
-
-        <nav className="hidden lg:flex items-center gap-8">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
+      <div
+        className={cn(
+          "flex items-center justify-between gap-4 rounded-2xl px-4 backdrop-blur-xl transition-colors",
+          isHome
+            ? "border border-white/10 bg-[#0a1622]/45"
+            : isDark
+              ? "border border-white/10 bg-[#0a1622]/55"
+              : "border border-slate-200/80 bg-white/60",
+          compact ? "h-12" : "h-14"
+        )}
+        style={isHome || isDark ? undefined : { boxShadow: "var(--shadow-y-nav)" }}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {showBack && <BackButton className={cn("shrink-0", isDark && "border-transparent bg-transparent text-white hover:bg-white/10")} />}
+          {showBack && <HomeButton className={cn("shrink-0 sm:hidden", isDark && "border-transparent bg-transparent text-white hover:bg-white/10")} />}
+          <Link href="/" className="flex items-center shrink-0">
+            <span
               className={cn(
-                "text-sm font-medium transition-colors hover:text-brand-500",
-                pathname === link.href || (link.href === "/" && pathname === "/")
-                  ? "text-brand-500"
-                  : "text-slate-600"
+                "text-xl font-extrabold tracking-tight",
+                isDark ? "text-white" : "text-slate-900"
               )}
             >
-              {link.label}
-            </Link>
-          ))}
+              HiddenStay
+            </span>
+          </Link>
+        </div>
+
+        <nav className={cn("items-center gap-1", compact ? "hidden xl:flex" : "hidden md:flex")}>
+          {NAV_LINKS.map((link) => {
+            const active =
+              pathname === link.href ||
+              (link.href === "/hidden-gems" && pathname.startsWith("/hidden-gems")) ||
+              (link.href === "/planner" && pathname.startsWith("/planner"));
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors",
+                  isDark
+                    ? active
+                      ? "text-white bg-white/15"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                    : active
+                      ? "text-brand-600 bg-blue-50"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          {mounted && (
-            <button
-              type="button"
-              className="icon-btn-glass hidden md:flex"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-          )}
+        <div className="flex items-center gap-2 shrink-0">
+          {showBack && <HomeButton className={cn("hidden sm:inline-flex", isDark && "border-transparent bg-transparent text-white hover:bg-white/10")} />}
           {user ? (
             <>
               {dashboardHref && (
                 <Link href={dashboardHref}>
-                  <Button variant="outline" size="sm" className="hidden sm:inline-flex">
+                  <Button
+                    variant={isDark ? "glass" : "ghost"}
+                    size="sm"
+                    className={cn("hidden sm:inline-flex", isDark && "border-white/25 text-white bg-white/10 hover:bg-white/20")}
+                  >
                     Dashboard
                   </Button>
                 </Link>
               )}
-              <Button variant="ghost" size="sm" onClick={logout} className="hidden md:inline-flex">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={logout}
+                className={cn("hidden md:inline-flex", isDark ? "text-white/90 hover:bg-white/10" : "")}
+              >
                 Log out
               </Button>
             </>
           ) : (
             <>
               <Link href="/login" className="hidden sm:block">
-                <Button variant="ghost" size="sm">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={isDark ? "text-white/90 hover:bg-white/10 hover:text-white" : ""}
+                >
                   Sign in
                 </Button>
               </Link>
               <Link href="/register">
-                <Button size="sm" className="rounded-2xl px-5">
-                  Register Now
+                <Button
+                  size="sm"
+                  className={isDark ? "bg-white text-slate-900 hover:bg-white/90" : ""}
+                >
+                  Register
                 </Button>
               </Link>
             </>

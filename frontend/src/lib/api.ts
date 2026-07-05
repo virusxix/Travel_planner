@@ -1,116 +1,119 @@
 import type { ApiResponse } from "@/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
-function getToken(): string | null {
+function accessToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("accessToken");
 }
 
-function getRefreshToken(): string | null {
+function refreshToken(): string | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem("hiddenstay-auth");
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as { state?: { refreshToken?: string } };
-    return parsed.state?.refreshToken ?? null;
+    return (JSON.parse(raw) as { state?: { refreshToken?: string } }).state?.refreshToken ?? null;
   } catch {
     return null;
   }
 }
 
-let refreshPromise: Promise<string | null> | null = null;
+function persistTokens(access: string, refresh: string) {
+  localStorage.setItem("accessToken", access);
+  const raw = localStorage.getItem("hiddenstay-auth");
+  if (!raw) return;
+  try {
+    const parsed = JSON.parse(raw) as { state?: Record<string, string> };
+    if (parsed.state) {
+      parsed.state.accessToken = access;
+      parsed.state.refreshToken = refresh;
+      localStorage.setItem("hiddenstay-auth", JSON.stringify(parsed));
+    }
+  } catch {
+    /* store out of sync — access token still updated */
+  }
+}
 
-async function refreshAccessToken(): Promise<string | null> {
-  if (refreshPromise) return refreshPromise;
+let refreshJob: Promise<string | null> | null = null;
 
-  refreshPromise = (async () => {
-    const refreshToken = getRefreshToken();
-    if (!refreshToken) return null;
+async function rotateAccessToken(): Promise<string | null> {
+  if (refreshJob) return refreshJob;
+
+  refreshJob = (async () => {
+    const rt = refreshToken();
+    if (!rt) return null;
 
     try {
-      const res = await fetch(`${API_URL}/auth/refresh`, {
+      const res = await fetch(`${BASE}/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
+        body: JSON.stringify({ refreshToken: rt }),
       });
       const json = await res.json();
       if (!res.ok || !json.success) return null;
 
-      const accessToken = json.data.accessToken as string;
-      const newRefresh = json.data.refreshToken as string;
-      localStorage.setItem("accessToken", accessToken);
-
-      const stored = localStorage.getItem("hiddenstay-auth");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.state) {
-          parsed.state.accessToken = accessToken;
-          parsed.state.refreshToken = newRefresh;
-          localStorage.setItem("hiddenstay-auth", JSON.stringify(parsed));
-        }
-      }
-      return accessToken;
+      const access = json.data.accessToken as string;
+      const nextRefresh = json.data.refreshToken as string;
+      persistTokens(access, nextRefresh);
+      return access;
     } catch {
       return null;
     } finally {
-      refreshPromise = null;
+      refreshJob = null;
     }
   })();
 
-  return refreshPromise;
+  return refreshJob;
 }
 
-async function fetchWithAuth(path: string, options: RequestInit = {}, retry = true): Promise<Response> {
-  const token = getToken();
-  const headers: HeadersInit = {
-    ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
-    ...(options.headers || {}),
+async function request(path: string, init: RequestInit = {}, retry = true): Promise<Response> {
+  const headers: Record<string, string> = {
+    ...(init.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+    ...((init.headers as Record<string, string>) ?? {}),
   };
-  if (token) {
-    (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
-  }
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  const token = accessToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
 
-  if (res.status === 401 && retry && typeof window !== "undefined") {
-    const newToken = await refreshAccessToken();
-    if (newToken) {
-      return fetchWithAuth(path, options, false);
-    }
-    localStorage.removeItem("accessToken");
-    const { useAuthStore } = await import("@/stores/auth");
-    useAuthStore.getState().logout();
-  }
+  const res = await fetch(`${BASE}${path}`, { ...init, headers });
 
+  if (res.status !== 401 || !retry || typeof window === "undefined") return res;
+
+  const next = await rotateAccessToken();
+  if (next) return request(path, init, false);
+
+  localStorage.removeItem("accessToken");
+  const { useAuthStore } = await import("@/stores/auth");
+  useAuthStore.getState().logout();
   return res;
 }
 
-export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetchWithAuth(path, options);
-  const json: ApiResponse<T> = await res.json();
+async function parseJson<T>(res: Response): Promise<ApiResponse<T>> {
+  return res.json() as Promise<ApiResponse<T>>;
+}
 
-  if (!res.ok || !json.success) {
-    throw new Error(json.error?.message || "Request failed");
-  }
+export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await request(path, init);
+  const json = await parseJson<T>(res);
+  if (!res.ok || !json.success) throw new Error(json.error?.message ?? "Request failed");
   return json.data;
 }
 
 export async function apiWithMeta<T>(
   path: string,
-  options?: RequestInit
+  init?: RequestInit
 ): Promise<{ data: T; meta?: Record<string, unknown> }> {
-  const res = await fetchWithAuth(path, options);
-  const json = await res.json();
-  if (!res.ok || !json.success) throw new Error(json.error?.message || "Request failed");
+  const res = await request(path, init ?? {});
+  const json = await parseJson<T>(res);
+  if (!res.ok || !json.success) throw new Error(json.error?.message ?? "Request failed");
   return { data: json.data, meta: json.meta };
 }
 
 export async function uploadFile(file: File): Promise<string> {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetchWithAuth("/upload", { method: "POST", body: form });
-  const json = await res.json();
-  if (!res.ok || !json.success) throw new Error(json.error?.message || "Upload failed");
-  return json.data.url as string;
+  const res = await request("/upload", { method: "POST", body: form });
+  const json = await parseJson<{ url: string }>(res);
+  if (!res.ok || !json.success) throw new Error(json.error?.message ?? "Upload failed");
+  return json.data.url;
 }

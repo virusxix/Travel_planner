@@ -1,56 +1,59 @@
+"use client";
+
 import Link from "next/link";
-import { Compass } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { isNightRoute } from "@/lib/theme-routes";
+import { cn } from "@/lib/utils";
 
 export function Footer() {
+  const dark = isNightRoute(usePathname());
   return (
-    <footer className="border-t border-slate-200 bg-white">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <footer
+      className={cn(
+        "border-t",
+        dark ? "theme-night border-white/10 bg-[#0a1622]" : "border-stone-200 bg-white"
+      )}
+    >
+      <div className="page-container py-14">
         <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-1">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500">
-                <Compass className="h-5 w-5 text-white" />
-              </div>
-              <span className="font-display font-extrabold text-foreground">
-                HIDDEN<span className="text-brand-500">STAY</span>
-              </span>
-            </div>
-            <p className="mt-4 text-sm text-muted leading-relaxed">
-              Empowering small hotels and homestays across Asia with only 5% commission.
+            <span className="font-display text-lg font-semibold text-stone-900">HiddenStay</span>
+            <p className="mt-3 text-sm text-stone-500 leading-relaxed max-w-xs">
+              Connecting travelers with independent homestays and eco-lodges across Asia. Hosts keep 95%.
             </p>
           </div>
           {[
             {
               title: "Explore",
               links: [
-                { href: "/search", label: "Find stays" },
-                { href: "/hidden-gems", label: "Hidden gems" },
-                { href: "/planner", label: "AI planner" },
+                { href: "/hidden-gems", label: "Find stays" },
+                { href: "/hidden-gems", label: "Experiences" },
+                { href: "/planner", label: "Trip planner" },
               ],
             },
             {
               title: "Hosts",
               links: [
-                { href: "/register?role=owner", label: "List property" },
+                { href: "/register?role=owner", label: "List your property" },
                 { href: "/business", label: "Owner dashboard" },
               ],
             },
             {
               title: "Company",
               links: [
-                { href: "/#about", label: "About" },
-                { href: "/register?role=owner", label: "5% fair commission" },
+                { href: "/#about", label: "About us" },
+                { href: "/register?role=owner", label: "5% commission" },
               ],
             },
           ].map((col) => (
             <div key={col.title}>
-              <p className="font-display font-semibold text-foreground">{col.title}</p>
-              <ul className="mt-4 space-y-3">
+              <p className="text-sm font-semibold text-stone-900">{col.title}</p>
+              <ul className="mt-4 space-y-2.5">
                 {col.links.map((l) => (
                   <li key={l.label}>
                     <Link
                       href={l.href}
-                      className="text-sm text-muted hover:text-brand-500 transition-colors"
+                      className="text-sm text-stone-500 hover:text-stone-900 transition-colors"
                     >
                       {l.label}
                     </Link>
@@ -60,9 +63,12 @@ export function Footer() {
             </div>
           ))}
         </div>
-        <p className="mt-12 border-t border-slate-200 pt-8 text-center text-xs text-muted">
-          © {new Date().getFullYear()} HiddenStay AI. Built for authentic travel across Asia.
-        </p>
+        <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-stone-200 pt-8">
+          <p className="text-xs text-stone-400">
+            © {new Date().getFullYear()} HiddenStay. All rights reserved.
+          </p>
+          <p className="text-xs text-stone-400">Built for authentic travel across Asia</p>
+        </div>
       </div>
     </footer>
   );

@@ -8,11 +8,13 @@ export function PlannerVenueCard({
   title,
   imageUrl,
   rating = 4.8,
+  mapOrder,
   className,
 }: {
   title: string;
   imageUrl?: string | null;
   rating?: number;
+  mapOrder?: number;
   className?: string;
 }) {
   const src =
@@ -22,7 +24,7 @@ export function PlannerVenueCard({
   return (
     <article
       className={cn(
-        "relative shrink-0 w-[140px] rounded-3xl overflow-hidden border border-white/[0.08] bg-white/[0.04]",
+        "relative shrink-0 w-[140px] rounded-2xl overflow-hidden border border-white/10 bg-white/5 shadow-sm",
         className
       )}
     >
@@ -39,9 +41,14 @@ export function PlannerVenueCard({
           <Star className="h-3 w-3 fill-orange-400 text-orange-400" />
           {rating.toFixed(1)}
         </span>
+        {mapOrder != null && (
+          <span className="absolute bottom-2 left-2 flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold text-white shadow">
+            {mapOrder}
+          </span>
+        )}
         <button
           type="button"
-          className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/40 backdrop-blur flex items-center justify-center text-white/90"
+          className="absolute top-2 right-2 h-7 w-7 rounded-full bg-white/90 border border-slate-200 flex items-center justify-center text-slate-600"
           aria-label="Save"
         >
           <Heart className="h-3.5 w-3.5" />
@@ -51,7 +58,7 @@ export function PlannerVenueCard({
         <p className="text-[11px] font-semibold text-white truncate flex-1">{title}</p>
         <button
           type="button"
-          className="h-6 w-6 shrink-0 rounded-full bg-white/10 flex items-center justify-center text-white"
+          className="h-6 w-6 shrink-0 rounded-full bg-white/10 flex items-center justify-center text-white/70"
           aria-label="Add to trip"
         >
           <Plus className="h-3.5 w-3.5" />

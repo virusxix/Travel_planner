@@ -1,6 +1,5 @@
 "use client";
 
-import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/stores/auth";
@@ -19,14 +18,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [hydrate]);
 
   return (
-    <NextThemesProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-      <QueryClientProvider client={client}>
-        <ToastProvider>
-          <GoogleMapsProvider>
-            <ErrorBoundary>{children}</ErrorBoundary>
-          </GoogleMapsProvider>
-        </ToastProvider>
-      </QueryClientProvider>
-    </NextThemesProvider>
+    <QueryClientProvider client={client}>
+      <ToastProvider>
+        <GoogleMapsProvider>
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </GoogleMapsProvider>
+      </ToastProvider>
+    </QueryClientProvider>
   );
 }

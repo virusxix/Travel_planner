@@ -18,6 +18,7 @@ import { GlassCard } from "@/components/shared/glass-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DestinationCard } from "@/components/property/destination-card";
+import { ItineraryCard } from "@/components/itinerary/itinerary-card";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Booking, Property } from "@/types";
 
@@ -46,7 +47,17 @@ export default function TravelerDashboard() {
 
   const { data: itineraries } = useQuery({
     queryKey: ["my-itineraries"],
-    queryFn: () => api<{ id: string; destination: string; country: string; startDate: string; totalCost?: number }[]>("/itinerary/me"),
+    queryFn: () =>
+      api<
+        {
+          id: string;
+          destination: string;
+          country: string;
+          startDate: string;
+          endDate: string;
+          totalCost?: number | string | null;
+        }[]
+      >("/itinerary/me"),
     enabled: !!user,
   });
 
@@ -69,13 +80,13 @@ export default function TravelerDashboard() {
       <div className="grid gap-6 sm:grid-cols-3 mb-10">
         {[
           { label: "Upcoming trips", value: upcoming.length, icon: Calendar },
-          { label: "AI itineraries", value: itineraries?.length ?? 0, icon: Sparkles },
+          { label: "Saved itineraries", value: itineraries?.length ?? 0, icon: Sparkles },
           { label: "Total bookings", value: bookings?.length ?? 0, icon: MapPin },
         ].map((s) => (
-          <GlassCard key={s.label} hover={false} className="p-6">
-            <s.icon className="h-8 w-8 text-violet-400 mb-3" />
-            <p className="text-sm text-muted">{s.label}</p>
-            <p className="font-display text-3xl font-bold mt-1">{s.value}</p>
+          <GlassCard key={s.label} hover={false} className="p-5">
+            <s.icon className="h-5 w-5 text-stone-400 mb-3" />
+            <p className="text-sm text-stone-500">{s.label}</p>
+            <p className="font-display text-2xl font-semibold mt-1 text-stone-900">{s.value}</p>
           </GlassCard>
         ))}
       </div>
@@ -83,11 +94,11 @@ export default function TravelerDashboard() {
       <section id="trips" className="mb-12">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-display text-xl font-bold">Upcoming trips</h2>
-          <Link href="/search"><Button size="sm">Book a stay</Button></Link>
+          <Link href="/hidden-gems"><Button size="sm">Book a stay</Button></Link>
         </div>
         {upcoming.length === 0 ? (
           <GlassCard hover={false} className="p-10 text-center text-muted">
-            No upcoming trips. <Link href="/search" className="text-primary-600 font-medium">Explore stays</Link>
+            No upcoming trips. <Link href="/hidden-gems" className="text-primary-600 font-medium">Explore stays</Link>
           </GlassCard>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
@@ -132,18 +143,7 @@ export default function TravelerDashboard() {
             </GlassCard>
           )}
           {itineraries?.map((it) => (
-            <Link key={it.id} href={`/planner?id=${it.id}`}>
-              <GlassCard className="p-6">
-                <Badge variant="primary">AI Generated</Badge>
-                <p className="mt-3 font-display font-semibold text-lg">{it.destination}, {it.country}</p>
-                <p className="text-sm text-muted mt-1">{formatDate(it.startDate)}</p>
-                {it.totalCost && (
-                  <p className="mt-2 text-sm font-semibold text-secondary-500">
-                    Est. {formatCurrency(Number(it.totalCost))}
-                  </p>
-                )}
-              </GlassCard>
-            </Link>
+            <ItineraryCard key={it.id} itinerary={it} />
           ))}
         </div>
       </section>

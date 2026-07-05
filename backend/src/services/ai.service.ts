@@ -13,8 +13,10 @@ import {
 } from "../lib/ai-providers.js";
 import {
   enrichItineraryActivities,
+  geocodeDestination,
   isServerPlacesEnrichmentEnabled,
 } from "./places.service.js";
+import { reorderActivitiesForRoute } from "../utils/route-order.js";
 
 export { getAiProvider, isAiEnabled } from "../lib/ai-providers.js";
 
@@ -96,6 +98,7 @@ Rules:
 - "location" must include city and country so maps can find it.
 - Costs in USD, realistic for the budget.
 - 3–5 activities per day, chronological times.
+- Order each day as a compact route: each next stop should be near the previous one (same neighborhood when possible). No zigzag across the city.
 - Prefer local food, culture, and small businesses over chains.`;
 
 function activityCreateData(a: ActivityPayload) {
@@ -117,13 +120,19 @@ async function enrichPayload(
   payload: ItineraryPayload,
   input: ItineraryInput
 ): Promise<ItineraryPayload> {
+  const center = await geocodeDestination(input.destination, input.country);
+  const routeStart = center ?? { lat: 0, lng: 0 };
+
   const days = await Promise.all(
     payload.days.map(async (day) => {
-      const activities = await enrichItineraryActivities(
+      const enriched = await enrichItineraryActivities(
         day.activities,
         input.destination,
         input.country
       );
+      const activities = center
+        ? reorderActivitiesForRoute(enriched, routeStart)
+        : enriched;
       return { ...day, activities };
     })
   );
@@ -508,11 +517,15 @@ export async function regenerateItineraryDay(itineraryId: string, dayNumber: num
       if (aiDay?.day?.activities?.length) {
         let day = aiDay.day;
         if (isServerPlacesEnrichmentEnabled()) {
-          const activities = await enrichItineraryActivities(
+          const center = await geocodeDestination(input.destination, input.country);
+          const enriched = await enrichItineraryActivities(
             day.activities,
             input.destination,
             input.country
           );
+          const activities = center
+            ? reorderActivitiesForRoute(enriched, center)
+            : enriched;
           day = { ...day, activities };
         }
         newDay = day;

@@ -39,7 +39,7 @@ export default function EditPropertyPage() {
   });
 
   if (isLoading) {
-    return <div className="min-h-screen bg-surface p-8"><div className="h-96 max-w-2xl mx-auto rounded-2xl bg-white/5 animate-pulse" /></div>;
+    return <div className="min-h-screen bg-surface p-8"><div className="h-96 max-w-2xl mx-auto rounded-2xl bg-slate-200 animate-pulse" /></div>;
   }
 
   if (!property) return <div className="p-8 text-center">Not found</div>;

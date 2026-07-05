@@ -12,6 +12,7 @@ export type ExploreVenue = {
   title: string;
   imageUrl?: string | null;
   category?: string | null;
+  mapOrder?: number;
 };
 
 export function ExploreMapSheet({
@@ -48,7 +49,7 @@ export function ExploreMapSheet({
         expanded ? "max-h-[42%]" : "max-h-[88px]"
       )}
     >
-      <div className="pointer-events-auto glass-sheet rounded-t-[24px] border-t border-white/[0.1] shadow-[0_-8px_32px_rgba(0,0,0,0.35)] flex flex-col min-h-0">
+      <div className="pointer-events-auto bg-[#0a1622]/95 backdrop-blur-xl rounded-t-[24px] border-t border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.5)] flex flex-col min-h-0">
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
@@ -56,9 +57,9 @@ export function ExploreMapSheet({
           aria-label={expanded ? "Collapse" : "Expand"}
         >
           {expanded ? (
-            <ChevronDown className="h-4 w-4 text-slate-400" />
+            <ChevronDown className="h-4 w-4 text-slate-500" />
           ) : (
-            <ChevronUp className="h-4 w-4 text-slate-400" />
+            <ChevronUp className="h-4 w-4 text-slate-500" />
           )}
         </button>
 
@@ -81,14 +82,19 @@ export function ExploreMapSheet({
         {expanded && (
           <div className="overflow-y-auto scrollbar-hide px-3 pb-3 max-h-[28vh]">
             {destination && (
-              <p className="text-[11px] text-slate-400 mb-2">
-                <span className="text-white font-medium">{destination}</span>
+              <p className="text-[11px] text-slate-500 mb-2">
+                <span className="text-slate-900 font-medium">{destination}</span>
               </p>
             )}
             <div className="flex gap-2.5 overflow-x-auto scrollbar-hide">
               {things.length ? (
                 things.map((v) => (
-                  <PlannerVenueCard key={v.id} title={v.title} imageUrl={v.imageUrl} />
+                  <PlannerVenueCard
+                    key={v.id}
+                    title={v.title}
+                    imageUrl={v.imageUrl}
+                    mapOrder={v.mapOrder}
+                  />
                 ))
               ) : (
                 <p className="text-xs text-slate-500 py-2">Loading places…</p>

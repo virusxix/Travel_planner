@@ -19,13 +19,25 @@ import chatRoutes from "./routes/chat.routes.js";
 import favoritesRoutes from "./routes/favorites.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import stripeWebhookRoutes from "./routes/stripe.webhook.routes.js";
+import mapsRoutes from "./routes/maps.routes.js";
 
 const app = express();
 
 app.use(helmet());
 app.use(
   cors({
-    origin: env.FRONTEND_URL,
+    origin(origin, callback) {
+      // ponytail: dev localhost on any port; prod uses FRONTEND_URL (comma-separated ok)
+      if (!origin) return callback(null, true);
+      if (
+        env.NODE_ENV === "development" &&
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+      ) {
+        return callback(null, true);
+      }
+      const allowed = env.FRONTEND_URL.split(",").map((s) => s.trim());
+      callback(null, allowed.includes(origin));
+    },
     credentials: true,
   })
 );
@@ -56,6 +68,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/favorites", favoritesRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/maps", mapsRoutes);
 app.use("/api", miscRoutes);
 
 app.use(errorHandler);

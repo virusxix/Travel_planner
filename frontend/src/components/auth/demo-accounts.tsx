@@ -21,8 +21,8 @@ export function DemoAccounts({
 }) {
   return (
     <div className={cn("rounded-2xl border border-slate-200 bg-slate-50 p-4", compact && "p-3")}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">Try a demo account</p>
-      <p className="mt-1 text-xs text-muted">{hint}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Try a demo account</p>
+      <p className="mt-1 text-xs text-slate-500">{hint}</p>
       <div className={cn("mt-3 space-y-2", compact && "mt-2")}>
         {DEMO_ACCOUNTS.map((account) => {
           const Icon = ICONS[account.role];
@@ -43,7 +43,7 @@ export function DemoAccounts({
                     Demo
                   </span>
                 </span>
-                <span className="mt-0.5 block truncate text-xs text-muted">{account.email}</span>
+                <span className="mt-0.5 block truncate text-xs text-slate-500">{account.email}</span>
                 {!compact && (
                   <span className="mt-1 block text-xs text-slate-500">{account.description}</span>
                 )}

@@ -19,11 +19,9 @@ import {
   stripe,
 } from "../services/stripe.service.js";
 
-const router = Router();
+import { paramId } from "../utils/params.js";
 
-function paramId(value: string | string[]): string {
-  return Array.isArray(value) ? value[0] : value;
-}
+const router = Router();
 
 router.post(
   "/quote",

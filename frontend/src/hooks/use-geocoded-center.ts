@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { DEFAULT_MAP_CENTER, lookupCityCenter, type LatLng } from "@/lib/city-coords";
+import { useGoogleMaps } from "@/components/maps/google-maps-provider";
+import { geocodeInBrowser } from "@/lib/places-search";
 
 /**
- * Resolves map center from destination + country.
- * Uses static lookup first, then Google Geocoding API (debounced) for any city.
+ * Map center from destination — static lookup, then Maps JS Geocoder (not REST Geocoding API).
  */
 export function useGeocodedCenter(destination: string, country: string): LatLng {
+  const { isLoaded } = useGoogleMaps();
   const [center, setCenter] = useState<LatLng>(() => {
     return lookupCityCenter(destination, country) ?? DEFAULT_MAP_CENTER;
   });
@@ -26,41 +28,21 @@ export function useGeocodedCenter(destination: string, country: string): LatLng 
       return;
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
-    if (!apiKey) {
-      setCenter(DEFAULT_MAP_CENTER);
-      return;
-    }
+    if (!isLoaded) return;
 
     const query = ctry ? `${dest}, ${ctry}` : dest;
-    const controller = new AbortController();
+    let cancelled = false;
 
     const timer = window.setTimeout(async () => {
-      try {
-        const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
-        url.searchParams.set("address", query);
-        url.searchParams.set("key", apiKey);
-
-        const res = await fetch(url.toString(), { signal: controller.signal });
-        const data = (await res.json()) as {
-          status: string;
-          results?: { geometry: { location: { lat: number; lng: number } } }[];
-        };
-
-        if (data.status === "OK" && data.results?.[0]) {
-          const { lat, lng } = data.results[0].geometry.location;
-          setCenter({ lat, lng });
-        }
-      } catch {
-        /* ignore abort / network */
-      }
+      const loc = await geocodeInBrowser(query);
+      if (!cancelled && loc) setCenter({ lat: loc.lat, lng: loc.lng });
     }, 450);
 
     return () => {
+      cancelled = true;
       window.clearTimeout(timer);
-      controller.abort();
     };
-  }, [destination, country]);
+  }, [destination, country, isLoaded]);
 
   return center;
 }

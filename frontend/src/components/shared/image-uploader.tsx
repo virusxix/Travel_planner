@@ -61,7 +61,7 @@ export function ImageUploader({
         {images.length < max && (
           <label
             className={cn(
-              "flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/20 glass-card text-muted hover:border-violet-500/50 transition-colors",
+              "flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 y-card text-slate-600 hover:border-brand-500 transition-colors",
               uploading && "opacity-60 pointer-events-none"
             )}
           >
@@ -77,8 +77,8 @@ export function ImageUploader({
           </label>
         )}
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
-      <p className="text-xs text-muted">Or paste URLs below after uploading elsewhere.</p>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      <p className="text-xs text-slate-500">Or paste URLs below after uploading elsewhere.</p>
     </div>
   );
 }
@@ -92,7 +92,7 @@ export function ImageGallery({
   onDelete?: (imageId: string) => void;
   canDelete?: boolean;
 }) {
-  if (!images.length) return <p className="text-sm text-muted">No images yet.</p>;
+  if (!images.length) return <p className="text-sm text-slate-600">No images yet.</p>;
   return (
     <div className="flex flex-wrap gap-3">
       {images.map((img) => (

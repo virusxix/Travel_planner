@@ -51,7 +51,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthPageShell title="Welcome back" subtitle="Sign in to HiddenStay AI">
+    <AuthPageShell title="Welcome back" subtitle="Sign in to your HiddenStay account">
       <GlassCard hover={false} className="p-8">
         <form onSubmit={handleSubmit} className="space-y-5">
           <FormField label="Email">
@@ -72,7 +72,7 @@ export default function LoginPage() {
             />
           </FormField>
           {error && (
-            <p className="rounded-xl bg-red-50 px-4 py-2 text-sm text-red-500 dark:bg-red-900/20">
+            <p className="rounded-xl bg-red-50 px-4 py-2 text-sm text-red-600 border border-red-100">
               {error}
             </p>
           )}

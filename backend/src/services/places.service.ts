@@ -156,27 +156,7 @@ export async function enrichActivity(
   return enrichPlace(query, bias);
 }
 
-const PLACES_CONCURRENCY = 4;
-
-async function runPool<T, R>(
-  items: T[],
-  concurrency: number,
-  fn: (item: T) => Promise<R>
-): Promise<R[]> {
-  const results = new Array<R>(items.length);
-  let index = 0;
-  async function worker() {
-    while (index < items.length) {
-      const i = index++;
-      results[i] = await fn(items[i]);
-    }
-  }
-  const workers = Math.min(concurrency, items.length);
-  await Promise.all(Array.from({ length: workers }, () => worker()));
-  return results;
-}
-
-/** Enrich all activities with Google Places (photos + coordinates). */
+/** Enrich activities sequentially — each lookup biased near the previous stop. */
 export async function enrichItineraryActivities<
   T extends ActivityForEnrichment & Record<string, unknown>,
 >(activities: T[], destination: string, country: string): Promise<(T & PlaceEnrichment)[]> {
@@ -185,14 +165,24 @@ export async function enrichItineraryActivities<
   }
 
   const center = await geocodeDestination(destination, country);
-  const bias = center ? { lat: center.lat, lng: center.lng } : undefined;
+  let chainBias = center ? { lat: center.lat, lng: center.lng } : undefined;
 
-  return runPool(activities, PLACES_CONCURRENCY, async (activity) => {
-    const place = await enrichActivity(activity, destination, country, bias);
-    return {
+  const results: (T & PlaceEnrichment)[] = [];
+
+  for (const activity of activities) {
+    const place = await enrichActivity(activity, destination, country, chainBias);
+    const merged = {
       ...activity,
       ...(place ?? {}),
       location: place?.formattedAddress ?? activity.location,
     } as T & PlaceEnrichment;
-  });
+
+    results.push(merged);
+
+    if (merged.latitude != null && merged.longitude != null) {
+      chainBias = { lat: merged.latitude, lng: merged.longitude };
+    }
+  }
+
+  return results;
 }

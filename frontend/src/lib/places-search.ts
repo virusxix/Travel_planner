@@ -1,5 +1,7 @@
 "use client";
 
+import { haversineKm } from "@/lib/route-optimization";
+
 export type PlaceHit = {
   latitude: number;
   longitude: number;
@@ -8,10 +10,31 @@ export type PlaceHit = {
   location?: string;
 };
 
+export function buildPlaceQuery(
+  title: string,
+  location: string | null | undefined,
+  destination: string,
+  country: string
+): string {
+  const dest = [destination, country].filter(Boolean).join(", ");
+  const loc = location?.trim();
+
+  if (loc && loc.length > 3) {
+    const lower = loc.toLowerCase();
+    const inDest =
+      lower.includes(destination.toLowerCase()) ||
+      (country && lower.includes(country.toLowerCase()));
+    return inDest ? loc : `${loc}, ${dest}`;
+  }
+
+  return `${title.trim()}, ${dest}`;
+}
+
 /** Places API (New) via Maps JS — works with referrer-restricted browser keys. */
 export async function searchPlaceInBrowser(
   query: string,
-  bias?: google.maps.LatLngLiteral
+  bias?: google.maps.LatLngLiteral,
+  maxKmFromBias = 80
 ): Promise<PlaceHit | null> {
   if (typeof google === "undefined") return null;
 
@@ -27,7 +50,7 @@ export async function searchPlaceInBrowser(
     if (bias) {
       request.locationBias = {
         center: bias,
-        radius: 25000,
+        radius: 20000,
       };
     }
 
@@ -37,6 +60,11 @@ export async function searchPlaceInBrowser(
 
     const lat = place.location.lat();
     const lng = place.location.lng();
+
+    if (bias && haversineKm(bias, { lat, lng }) > maxKmFromBias) {
+      return null;
+    }
+
     const photoUrl = place.photos?.[0]?.getURI({ maxWidth: 400 });
 
     return {

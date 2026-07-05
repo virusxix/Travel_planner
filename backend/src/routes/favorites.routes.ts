@@ -2,6 +2,7 @@ import { Router } from "express";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../utils/apiResponse.js";
 import { authenticate, authorize } from "../middleware/auth.js";
+import { paramId } from "../utils/params.js";
 import { prisma } from "../lib/prisma.js";
 
 const router = Router();
@@ -44,8 +45,9 @@ router.get(
 router.post(
   "/:propertyId",
   asyncHandler(async (req, res) => {
+    const propertyId = paramId(req.params.propertyId);
     const property = await prisma.property.findUnique({
-      where: { id: req.params.propertyId, status: "APPROVED" },
+      where: { id: propertyId, status: "APPROVED" },
     });
     if (!property) return sendError(res, "Property not found", 404);
 
@@ -53,12 +55,12 @@ router.post(
       where: {
         userId_propertyId: {
           userId: req.user!.userId,
-          propertyId: req.params.propertyId,
+          propertyId,
         },
       },
       create: {
         userId: req.user!.userId,
-        propertyId: req.params.propertyId,
+        propertyId,
       },
       update: {},
     });
@@ -69,10 +71,11 @@ router.post(
 router.delete(
   "/:propertyId",
   asyncHandler(async (req, res) => {
+    const propertyId = paramId(req.params.propertyId);
     await prisma.favorite.deleteMany({
       where: {
         userId: req.user!.userId,
-        propertyId: req.params.propertyId,
+        propertyId,
       },
     });
     return sendSuccess(res, { removed: true });

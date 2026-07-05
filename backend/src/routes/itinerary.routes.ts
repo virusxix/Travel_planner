@@ -6,6 +6,7 @@ import { sendSuccess, sendError } from "../utils/apiResponse.js";
 import { authenticate } from "../middleware/auth.js";
 import { itinerarySchema } from "../validators/schemas.js";
 import { generateItinerary, regenerateItineraryDay } from "../services/ai.service.js";
+import { applyRouteOrderToItinerary } from "../services/route-order.service.js";
 import { prisma } from "../lib/prisma.js";
 
 const router = Router();
@@ -35,13 +36,36 @@ router.get(
   })
 );
 
+router.delete(
+  "/:id",
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const existing = await prisma.itinerary.findFirst({
+      where: { id: req.params.id, userId: req.user!.userId },
+    });
+    if (!existing) return sendError(res, "Not found", 404);
+
+    await prisma.itinerary.delete({ where: { id: req.params.id } });
+    return sendSuccess(res, {
+      action: "DELETE_ITINERARY",
+      target_ids: [req.params.id],
+      confirmation_message: `Successfully removed your trip to ${existing.destination}, ${existing.country}.`,
+    });
+  })
+);
+
 router.get(
   "/:id",
   authenticate,
   asyncHandler(async (req, res) => {
     const itinerary = await prisma.itinerary.findFirst({
       where: { id: req.params.id, userId: req.user!.userId },
-      include: { days: { include: { activities: true }, orderBy: { dayNumber: "asc" } } },
+      include: {
+        days: {
+          include: { activities: { orderBy: { time: "asc" } } },
+          orderBy: { dayNumber: "asc" },
+        },
+      },
     });
     if (!itinerary) return sendError(res, "Not found", 404);
     return sendSuccess(res, itinerary);
@@ -75,16 +99,19 @@ router.post(
 );
 
 const enrichPlacesSchema = z.object({
-  updates: z.array(
-    z.object({
-      activityId: z.string().uuid(),
-      latitude: z.number(),
-      longitude: z.number(),
-      imageUrl: z.string().min(1).optional(),
-      placeId: z.string().optional(),
-      location: z.string().optional(),
-    })
-  ),
+  updates: z
+    .array(
+      z.object({
+        activityId: z.string().uuid(),
+        latitude: z.number(),
+        longitude: z.number(),
+        imageUrl: z.string().min(1).optional(),
+        placeId: z.string().optional(),
+        location: z.string().optional(),
+      })
+    )
+    .default([]),
+  reorderOnly: z.boolean().optional(),
 });
 
 router.patch(
@@ -92,7 +119,7 @@ router.patch(
   authenticate,
   asyncHandler(async (req, res) => {
     const itineraryId = String(req.params.id);
-    const { updates } = enrichPlacesSchema.parse(req.body);
+    const { updates, reorderOnly } = enrichPlacesSchema.parse(req.body);
 
     const itinerary = await prisma.itinerary.findFirst({
       where: { id: itineraryId, userId: req.user!.userId },
@@ -118,9 +145,18 @@ router.patch(
       });
     }
 
+    if (updates.length > 0 || reorderOnly) {
+      await applyRouteOrderToItinerary(itineraryId);
+    }
+
     const updated = await prisma.itinerary.findFirst({
       where: { id: itineraryId },
-      include: { days: { include: { activities: true }, orderBy: { dayNumber: "asc" } } },
+      include: {
+        days: {
+          include: { activities: { orderBy: { time: "asc" } } },
+          orderBy: { dayNumber: "asc" },
+        },
+      },
     });
     return sendSuccess(res, updated);
   })

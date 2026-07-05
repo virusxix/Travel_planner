@@ -11,6 +11,11 @@ import {
   type AiProviderName,
 } from "../lib/ai-providers.js";
 import { formatAiQuotaHelp } from "./ai.service.js";
+import {
+  resolveDeleteItinerary,
+  executeDeleteItinerary,
+  type DeleteItineraryAction,
+} from "./itinerary-coordinator.service.js";
 
 export type ChatRole = "user" | "assistant";
 
@@ -120,7 +125,49 @@ export async function sendTravelChat(input: {
   message: string;
   history?: ChatMessage[];
   itineraryId?: string;
-}): Promise<{ reply: string; model: string; provider: string }> {
+}): Promise<{
+  reply: string;
+  model: string;
+  provider: string;
+  coordinatorAction?: DeleteItineraryAction | null;
+}> {
+  const coordinator = await resolveDeleteItinerary({
+    userId: input.userId,
+    userRequest: input.message,
+    activeItineraryId: input.itineraryId,
+  });
+
+  if (coordinator.type === "clarify") {
+    return {
+      reply: coordinator.message,
+      model: "coordinator",
+      provider: "coordinator",
+      coordinatorAction: null,
+    };
+  }
+
+  if (coordinator.type === "execute") {
+    const deleted = await executeDeleteItinerary(
+      input.userId,
+      coordinator.payload.target_ids
+    );
+    if (deleted === 0) {
+      return {
+        reply:
+          "I couldn't delete that itinerary — it may have already been removed. Refresh your trip list.",
+        model: "coordinator",
+        provider: "coordinator",
+        coordinatorAction: null,
+      };
+    }
+    return {
+      reply: coordinator.payload.confirmation_message,
+      model: "coordinator",
+      provider: "coordinator",
+      coordinatorAction: coordinator.payload,
+    };
+  }
+
   if (!getAiProvider()) {
     throw new Error(
       "No AI provider configured. Add GROQ_API_KEY to backend/.env (https://console.groq.com/keys)"
@@ -134,7 +181,8 @@ export async function sendTravelChat(input: {
   let lastError: unknown;
   for (const provider of getProviderFallbackOrder()) {
     try {
-      return await chatWithProvider(provider, system, history, input.message);
+      const result = await chatWithProvider(provider, system, history, input.message);
+      return { ...result, coordinatorAction: null };
     } catch (e) {
       lastError = e;
       console.warn(`${provider} chat failed:`, e instanceof Error ? e.message : e);

@@ -1,3 +1,5 @@
+import { UNSPLASH } from "@/lib/unsplash-images";
+
 export interface DemoAccount {
   label: string;
   email: string;
@@ -30,14 +32,14 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     label: "Host",
     email: "owner@hiddenstay.ai",
     password: "Password123!",
-    description: "List properties, manage rooms, and track bookings",
+    description: "4 sample listings, bookings, and revenue charts — shows even without a database",
     role: "BUSINESS_OWNER",
   },
   {
     label: "Admin",
     email: "admin@hiddenstay.ai",
     password: "Admin123!",
-    description: "Review listings and manage the platform",
+    description: "Sample approvals, users, and platform analytics — shows even without a database",
     role: "ADMIN",
   },
 ];
@@ -51,7 +53,7 @@ export const AUTH_EXAMPLE_STAYS: AuthExampleStay[] = [
     type: "Homestay",
     price: 42,
     rating: 4.8,
-    image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=900&q=80",
+    image: UNSPLASH.stays.homestay,
     tagline: "Family-run stay on the Ping River with Lanna breakfast",
   },
   {
@@ -62,7 +64,7 @@ export const AUTH_EXAMPLE_STAYS: AuthExampleStay[] = [
     type: "Boutique inn",
     price: 58,
     rating: 4.9,
-    image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=900&q=80",
+    image: UNSPLASH.stays.boutique,
     tagline: "Lantern-lit courtyard steps from artisan quarters",
   },
   {
@@ -73,7 +75,7 @@ export const AUTH_EXAMPLE_STAYS: AuthExampleStay[] = [
     type: "Eco lodge",
     price: 35,
     rating: 4.7,
-    image: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=900&q=80",
+    image: UNSPLASH.stays.ecoLodge,
     tagline: "Off-grid bungalows surrounded by rice paddies",
   },
   {
@@ -84,7 +86,7 @@ export const AUTH_EXAMPLE_STAYS: AuthExampleStay[] = [
     type: "Homestay",
     price: 38,
     rating: 4.6,
-    image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=900&q=80",
+    image: UNSPLASH.stays.guesthouse,
     tagline: "Wooden Lao house behind the morning market",
   },
 ];

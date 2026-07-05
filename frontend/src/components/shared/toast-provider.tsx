@@ -42,7 +42,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <Toast.Root
             key={m.id}
             className={cn(
-              "glass-strong rounded-2xl px-4 py-3 shadow-lg border data-[state=open]:animate-in data-[state=closed]:animate-out",
+              "y-card rounded-2xl px-4 py-3 shadow-lg border bg-white data-[state=open]:animate-in data-[state=closed]:animate-out",
               m.variant === "success" && "border-emerald-500/30",
               m.variant === "error" && "border-red-500/30",
               m.variant === "info" && "border-violet-500/30"
@@ -52,9 +52,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             }}
             duration={4000}
           >
-            <Toast.Title className="text-sm font-semibold">{m.title}</Toast.Title>
+            <Toast.Title className="text-sm font-semibold text-slate-900">{m.title}</Toast.Title>
             {m.description && (
-              <Toast.Description className="text-xs text-muted mt-1">{m.description}</Toast.Description>
+              <Toast.Description className="text-xs text-slate-600 mt-1">{m.description}</Toast.Description>
             )}
           </Toast.Root>
         ))}

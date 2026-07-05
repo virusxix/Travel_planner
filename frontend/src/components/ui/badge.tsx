@@ -1,24 +1,27 @@
 import { cn } from "@/lib/utils";
 
 export function Badge({
-  className,
+  children,
   variant = "default",
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement> & {
-  variant?: "default" | "success" | "warning" | "primary" | "outline";
+  className,
+}: {
+  children: React.ReactNode;
+  variant?: "default" | "primary" | "success" | "warning" | "outline";
+  className?: string;
 }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
-        variant === "default" && "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
-        variant === "primary" && "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300",
-        variant === "success" && "bg-secondary-100 text-secondary-600 dark:bg-emerald-900/30 dark:text-emerald-400",
-        variant === "warning" && "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-        variant === "outline" && "border border-border bg-transparent text-muted",
+        "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium",
+        variant === "default" && "bg-stone-100 text-stone-600",
+        variant === "primary" && "bg-teal-50 text-teal-800",
+        variant === "success" && "bg-emerald-50 text-emerald-700",
+        variant === "warning" && "bg-amber-50 text-amber-800",
+        variant === "outline" && "border border-stone-200 bg-white text-stone-600",
         className
       )}
-      {...props}
-    />
+    >
+      {children}
+    </span>
   );
 }

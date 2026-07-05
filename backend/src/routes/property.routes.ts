@@ -266,8 +266,12 @@ router.post(
   asyncHandler(async (req, res) => {
     const property = await prisma.property.findFirst({
       where: { id: req.params.id, ownerId: req.user!.userId },
+      include: { _count: { select: { rooms: true } } },
     });
     if (!property) return sendError(res, "Not found", 404);
+    if (property._count.rooms === 0) {
+      return sendError(res, "Add at least one room before submitting", 400);
+    }
 
     const updated = await prisma.$transaction(async (tx) => {
       const p = await tx.property.update({

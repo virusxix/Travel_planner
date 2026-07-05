@@ -6,7 +6,7 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
     <input
       type={type}
       className={cn(
-        "flex h-11 w-full rounded-2xl border border-border bg-surface-elevated px-4 py-2 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:border-primary-400",
+        "flex h-10 w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-sm text-stone-900 transition-colors placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/20 focus-visible:border-brand-600",
         className
       )}
       ref={ref}
@@ -22,7 +22,7 @@ export const Textarea = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <textarea
     className={cn(
-      "flex min-h-[100px] w-full rounded-2xl border border-border bg-surface-elevated px-4 py-3 text-sm text-foreground shadow-sm placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40",
+      "flex min-h-[100px] w-full rounded-xl border border-stone-200 bg-white px-3.5 py-3 text-sm text-stone-900 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/20 focus-visible:border-brand-600",
       className
     )}
     ref={ref}
@@ -37,7 +37,7 @@ export function Label({
 }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
-      className={cn("text-sm font-medium text-foreground leading-none", className)}
+      className={cn("text-sm font-medium text-stone-700 leading-none", className)}
       {...props}
     />
   );
@@ -51,7 +51,7 @@ export function Select({
   return (
     <select
       className={cn(
-        "flex h-11 w-full rounded-2xl border border-border bg-surface-elevated px-4 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40",
+        "flex h-10 w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-sm text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/20 focus-visible:border-brand-600",
         className
       )}
       {...props}
@@ -75,11 +75,11 @@ export function FormField({
   className?: string;
 }) {
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-1.5", className)}>
       <Label>{label}</Label>
       {children}
-      {error && <p className="text-xs text-red-400">{error}</p>}
-      {hint && !error && <p className="text-xs text-muted">{hint}</p>}
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      {hint && !error && <p className="text-xs text-stone-500">{hint}</p>}
     </div>
   );
 }

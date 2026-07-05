@@ -1,19 +1,53 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ArrowRight,
+  Luggage,
+  Building2,
+  BadgePercent,
+} from "lucide-react";
 import { YTravelSearchBar } from "@/components/home/y-travel-search-bar";
-import { PopularDestinationCard } from "@/components/home/popular-destination-card";
+import { PopularDestinationsRow } from "@/components/home/popular-destinations-row";
 import { ExampleStayCard, PropertyStayCard } from "@/components/home/example-stay-card";
+import { ScrambleText } from "@/components/home/scramble-text";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { AUTH_EXAMPLE_STAYS } from "@/lib/auth-examples";
-import { POPULAR_DESTINATIONS } from "@/lib/home-content";
+import { UNSPLASH } from "@/lib/unsplash-images";
 import type { Property } from "@/types";
+
+const ImmersiveHero = dynamic(
+  () => import("@/components/home/immersive-hero").then((m) => m.ImmersiveHero),
+  { ssr: false }
+);
+
+const TRUST = [
+  {
+    icon: Luggage,
+    title: "Backed by travelers",
+    desc: "Real reviews from guests who stayed with local hosts across Asia.",
+  },
+  {
+    icon: Building2,
+    title: "Stays for every style",
+    desc: "Homestays, eco-lodges, boutique inns — from budget to boutique.",
+  },
+  {
+    icon: BadgePercent,
+    title: "Best rates around",
+    desc: "Book direct with only 5% commission. Hosts keep more, you pay less.",
+  },
+];
 
 export default function HomePage() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -25,233 +59,234 @@ export default function HomePage() {
 
   const hasStays = (properties?.length ?? 0) > 0;
 
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger);
+    const mm = gsap.matchMedia();
+    mm.add("(prefers-reduced-motion: no-preference)", () => {
+      gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
+        gsap.fromTo(
+          el,
+          { autoAlpha: 0, y: 48 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: 1,
+            ease: "power3.out",
+            scrollTrigger: { trigger: el, start: "top 85%" },
+          }
+        );
+      });
+      gsap.fromTo(
+        "[data-hero-ui]",
+        { autoAlpha: 0, y: 24 },
+        { autoAlpha: 1, y: 0, duration: 1.2, delay: 0.9, ease: "power3.out" }
+      );
+    });
+    return () => mm.revert();
+  }, []);
+
   function scrollDestinations(dir: "left" | "right") {
-    scrollRef.current?.scrollBy({ left: dir === "left" ? -280 : 280, behavior: "smooth" });
+    scrollRef.current?.scrollBy({ left: dir === "left" ? -300 : 300, behavior: "smooth" });
   }
 
   return (
-    <div className="min-h-screen bg-surface">
-      {/* Hero */}
-      <section className="relative y-hero-bg pt-28 pb-44 sm:pt-32 sm:pb-48 overflow-hidden">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-            <motion.div
-              initial={{ opacity: 0, x: -24 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h1 className="font-display text-4xl font-extrabold leading-[1.15] text-foreground sm:text-5xl lg:text-[3.25rem]">
-                Your Journey{" "}
-                <span className="text-brand-500">to Unforgettable</span> Places Begins Here
-              </h1>
-              <p className="mt-5 max-w-lg text-base leading-relaxed text-muted sm:text-lg">
-                Discover homestays, eco-lodges, and boutique inns across Asia — authentic stays
-                with only 5% commission for local hosts.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="/search">
-                  <Button size="lg" className="rounded-[1.25rem]">
-                    Explore Stays
-                  </Button>
-                </Link>
-                <Link href="/planner">
-                  <Button size="lg" variant="outline" className="rounded-[1.25rem]">
-                    AI Trip Planner
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
+    <div className="relative min-h-screen text-white">
+      {/* Procedural night landscape lives fixed behind the whole page so the
+          scene stays visible while scrolling (not just the hero). */}
+      <ImmersiveHero className="fixed inset-0 z-0" />
+      {/* legibility scrim — clear at the top, deepening toward the fold */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-b from-transparent via-[#050a17]/25 to-[#050a17]/85"
+      />
 
-            <motion.div
-              initial={{ opacity: 0, x: 24 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="relative mx-auto w-full max-w-lg lg:max-w-none"
-            >
-              <div className="relative aspect-square sm:aspect-[4/3]">
-                <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-sky-200/80 to-brand-500/20" />
-                <Image
-                  src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=900&q=80"
-                  alt="Travel adventure"
-                  fill
-                  className="object-contain p-6 drop-shadow-2xl"
-                  priority
-                  sizes="(max-width:768px) 100vw, 50vw"
-                />
-                <div className="absolute -left-4 top-8 h-24 w-24 rounded-full bg-white/60 blur-2xl" />
-                <div className="absolute -right-2 bottom-12 h-32 w-32 rounded-full bg-brand-500/20 blur-3xl" />
-              </div>
-            </motion.div>
+      <div className="relative z-10">
+      {/* Hero */}
+      <section className="relative min-h-[100svh] flex flex-col overflow-hidden">
+        <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pt-24 pb-16 text-center">
+          <p className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.5em] text-white/40">
+            HiddenStay — AI travel, Asia
+          </p>
+          <h1 className="mt-6 text-[13vw] sm:text-6xl lg:text-7xl font-extrabold tracking-[-0.02em] text-white max-w-5xl leading-[0.98] uppercase">
+            <ScrambleText text="Stays hidden" delay={400} />
+            <br />
+            <span className="text-hollow">
+              <ScrambleText text="from the crowd" delay={900} />
+            </span>
+          </h1>
+          <p className="mt-7 text-sm sm:text-base text-white/55 max-w-md leading-relaxed">
+            Homestays and eco-lodges run by locals. Planned by AI, booked
+            direct — hosts keep 95%.
+          </p>
+
+          <div className="w-full mt-10 hero-search" data-hero-ui>
+            <YTravelSearchBar embedded className="max-w-7xl" />
           </div>
         </div>
 
-        {/* Floating search bar */}
-        <div className="absolute left-0 right-0 -bottom-16 sm:-bottom-20 px-4 sm:px-6 lg:px-8 z-10">
-          <YTravelSearchBar />
+        <div className="relative z-10 pb-8 flex justify-center">
+          <a
+            href="#trust"
+            aria-label="Scroll to content"
+            className="flex flex-col items-center gap-1 text-white/50 hover:text-white transition-colors"
+          >
+            <span className="text-[10px] uppercase tracking-[0.3em]">Scroll</span>
+            <ChevronDown className="h-4 w-4 animate-bounce" />
+          </a>
+        </div>
+      </section>
+
+      {/* Trust row — glass on night */}
+      <section id="trust" className="relative border-b border-white/10 py-14 sm:py-16">
+        <div className="page-container grid gap-6 sm:grid-cols-3">
+          {TRUST.map((item) => (
+            <div
+              key={item.title}
+              data-reveal
+              className="rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur-md p-6 flex flex-col items-center text-center sm:items-start sm:text-left"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-400/15 text-teal-300 mb-4">
+                <item.icon className="h-6 w-6" />
+              </div>
+              <h3 className="text-base font-bold text-white">{item.title}</h3>
+              <p className="mt-2 text-sm text-white/60 leading-relaxed max-w-xs">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Featured stays — white cards float on the night like lit windows */}
+      <section className="page-container py-16 sm:py-20">
+        <div data-reveal className="flex items-end justify-between gap-4 mb-8">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-teal-300/70">
+              01 — Stays
+            </p>
+            <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              Popular stays
+            </h2>
+            <p className="mt-2 text-white/55 text-sm sm:text-base">
+              {hasStays ? "Handpicked from our host community" : "Sample listings for inspiration"}
+            </p>
+          </div>
+          <Link href="/hidden-gems" className="hidden sm:block">
+            <Button variant="ghost" size="sm" className="text-teal-300 hover:bg-white/10 hover:text-teal-200">
+              View all <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+
+        <div data-reveal className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {hasStays
+            ? properties!.map((p) => <PropertyStayCard key={p.id} property={p} />)
+            : AUTH_EXAMPLE_STAYS.slice(0, 6).map((stay) => (
+                <ExampleStayCard key={stay.id} stay={stay} preview />
+              ))}
+        </div>
+      </section>
+
+      {/* Destinations carousel */}
+      <section className="border-y border-white/10 bg-white/[0.03] py-16 sm:py-20">
+        <div className="page-container">
+          <div data-reveal className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-teal-300/70">
+                02 — Destinations
+              </p>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                Explore destinations
+              </h2>
+              <p className="mt-2 text-white/55">Trending places across Southeast Asia</p>
+            </div>
+            <div className="hidden sm:flex gap-2">
+              <button
+                type="button"
+                onClick={() => scrollDestinations("left")}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                aria-label="Previous"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollDestinations("right")}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                aria-label="Next"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <div data-reveal>
+            <PopularDestinationsRow ref={scrollRef} />
+          </div>
         </div>
       </section>
 
       {/* About */}
-      <section id="about" className="px-4 pt-32 pb-20 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
-          <div className="relative">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-4 pt-8">
-                <div className="relative aspect-[3/4] overflow-hidden rounded-[1.75rem]">
-                  <Image
-                    src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=500&q=80"
-                    alt="Mountain travel"
-                    fill
-                    className="object-cover"
-                    sizes="240px"
-                  />
-                </div>
-                <div className="relative aspect-square overflow-hidden rounded-[1.75rem]">
-                  <Image
-                    src="https://images.unsplash.com/photo-1528183429752-a97d0bf99b5a?w=400&q=80"
-                    alt="Temple travel"
-                    fill
-                    className="object-cover"
-                    sizes="240px"
-                  />
-                </div>
+      <section id="about" className="relative py-16 sm:py-24">
+        <div className="page-container grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          <div data-reveal className="grid grid-cols-2 gap-3">
+            <div className="space-y-3 pt-6">
+              <div className="relative aspect-[3/4] overflow-hidden rounded-2xl">
+                <Image src={UNSPLASH.aboutTemple} alt="Chiang Mai temple" fill className="object-cover" sizes="240px" />
               </div>
-              <div className="relative aspect-[3/5] overflow-hidden rounded-[1.75rem] mt-4">
-                <Image
-                  src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500&q=80"
-                  alt="Lake travel"
-                  fill
-                  className="object-cover"
-                  sizes="280px"
-                />
+              <div className="relative aspect-square overflow-hidden rounded-2xl">
+                <Image src={UNSPLASH.heroEco} alt="Eco lodge" fill className="object-cover" sizes="240px" />
               </div>
             </div>
+            <div className="relative aspect-[3/5] overflow-hidden rounded-2xl mt-4">
+              <Image src={UNSPLASH.aboutLake} alt="Mountain lake" fill className="object-cover" sizes="280px" />
+            </div>
           </div>
-
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-widest text-brand-500">
-              About HiddenStay
+          <div data-reveal>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-teal-300/70">
+              03 — About
             </p>
-            <h2 className="mt-3 font-display text-3xl font-extrabold leading-tight text-foreground sm:text-4xl">
-              Navigating the World, One Hidden Stay at a Time
+            <h2 className="mt-3 text-3xl sm:text-4xl font-bold leading-tight tracking-tight text-white">
+              Independent hospitality, fairly priced
             </h2>
-            <p className="mt-5 text-muted leading-relaxed">
-              We connect travelers with small, independent hospitality businesses across Asia —
-              homestays, guesthouses, and eco-lodges that chain hotels overlook. Our AI planner
-              builds day-by-day itineraries with real local spots, and hosts keep 95% of every
-              booking.
+            <p className="mt-5 text-white/65 leading-relaxed">
+              HiddenStay connects you with homestays and eco-lodges run by locals — not global
+              chains. Plan your trip with AI, book direct, and know your host keeps 95% of every
+              reservation.
             </p>
             <Link href="/register?role=owner" className="inline-block mt-8">
-              <Button variant="outline" className="rounded-[1.25rem]">
-                Become a Host
+              <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                List your property
               </Button>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Popular destinations */}
-      <section className="px-4 py-16 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="flex items-end justify-between gap-4 mb-8">
-          <div>
-            <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground">
-              Popular Travel Locations
-            </h2>
-            <p className="mt-2 text-muted text-sm">Handpicked destinations across Asia</p>
-          </div>
-          <div className="hidden sm:flex gap-2">
-            <button
-              type="button"
-              onClick={() => scrollDestinations("left")}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_4px_14px_rgba(29,133,228,0.35)] hover:bg-brand-600 transition-colors"
-              aria-label="Previous destinations"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollDestinations("right")}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_4px_14px_rgba(29,133,228,0.35)] hover:bg-brand-600 transition-colors"
-              aria-label="Next destinations"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-
-        <div
-          ref={scrollRef}
-          className="flex gap-5 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 sm:mx-0 sm:px-0"
-        >
-          {POPULAR_DESTINATIONS.map((dest) => (
-            <PopularDestinationCard key={dest.id} {...dest} />
-          ))}
-        </div>
-
-        <div className="mt-10 flex justify-center">
-          <Link href="/search">
-            <Button className="rounded-[1.25rem] px-10">See More</Button>
-          </Link>
-        </div>
-      </section>
-
-      {/* Dream destination / stays */}
-      <section className="px-4 py-16 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground">
-            Let&apos;s explore your dream destination here!
-          </h2>
-          <p className="mt-3 text-muted text-sm">
-            {hasStays
-              ? "Featured stays from our community of local hosts"
-              : "Sample listings shown for inspiration — add your own from the business dashboard"}
-          </p>
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {hasStays
-            ? properties!.map((p) => <PropertyStayCard key={p.id} property={p} />)
-            : AUTH_EXAMPLE_STAYS.map((stay) => (
-                <ExampleStayCard key={stay.id} stay={stay} preview />
-              ))}
-        </div>
-
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link href="/search">
-            <Button className="rounded-[1.25rem] px-10">See More</Button>
-          </Link>
-          {!hasStays && (
-            <Link href="/business/properties/new">
-              <Button variant="outline" className="rounded-[1.25rem]">
-                Add your property
-              </Button>
-            </Link>
-          )}
-        </div>
-      </section>
-
-      {/* Host CTA */}
-      <section className="px-4 pb-20 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="relative overflow-hidden rounded-[2rem] bg-brand-500 px-8 py-14 sm:px-14 text-center text-white">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
-          <div className="relative">
-            <h2 className="font-display text-2xl sm:text-3xl font-extrabold">
-              List your property today
-            </h2>
-            <p className="mt-3 text-white/85 max-w-md mx-auto">
-              Only 5% commission for small hospitality businesses across Asia.
-            </p>
-            <Link href="/register?role=owner">
-              <Button
-                size="lg"
-                className="mt-8 bg-white text-brand-600 hover:bg-white/90 rounded-[1.25rem] shadow-none"
-              >
-                Register Now
-              </Button>
-            </Link>
+      {/* Host CTA — glowing panel over the night */}
+      <section className="pb-20 sm:pb-28 pt-4">
+        <div className="page-container">
+          <div
+            data-reveal
+            className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-teal-500/20 via-[#0a1622]/60 to-[#0a1622]/60 px-8 py-14 sm:px-14 text-center sm:text-left backdrop-blur-md"
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(94,234,212,0.18),transparent_55%)]" />
+            <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                  Grow your hospitality business
+                </h2>
+                <p className="mt-2 text-white/60 max-w-md">
+                  Join hosts across Asia with industry-low 5% commission.
+                </p>
+              </div>
+              <Link href="/register?role=owner">
+                <Button size="lg" className="bg-white text-[#0a1622] hover:bg-white/90 shrink-0">
+                  Get started
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
+      </div>
     </div>
   );
 }

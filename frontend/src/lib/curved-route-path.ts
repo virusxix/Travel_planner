@@ -36,8 +36,8 @@ export function buildTeravueCurvedPath(stops: LatLngPoint[]): LatLngPoint[] {
 
   const path: LatLngPoint[] = [];
   for (let i = 0; i < stops.length - 1; i++) {
-    const bulge = i % 2 === 0 ? 0.18 : -0.18;
-    const leg = quadraticBezierLeg(stops[i], stops[i + 1], bulge, 48);
+    const bulge = i % 2 === 0 ? 0.07 : -0.07;
+    const leg = quadraticBezierLeg(stops[i], stops[i + 1], bulge, 36);
     if (path.length) path.push(...leg.slice(1));
     else path.push(...leg);
   }

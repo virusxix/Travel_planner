@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { MapPin } from "lucide-react";
+import { UNSPLASH } from "@/lib/unsplash-images";
+
+const FALLBACK_SRC = UNSPLASH.destinationFallback;
 
 export function PopularDestinationCard({
   name,
@@ -13,21 +17,44 @@ export function PopularDestinationCard({
   image: string;
   href: string;
 }) {
+  const [src, setSrc] = useState(image);
+  const [showPlaceholder, setShowPlaceholder] = useState(false);
+
+  function handleError() {
+    if (src !== FALLBACK_SRC) {
+      setSrc(FALLBACK_SRC);
+      return;
+    }
+    setShowPlaceholder(true);
+  }
+
   return (
-    <motion.div whileHover={{ y: -4 }} className="shrink-0 w-[220px] sm:w-[260px]">
-      <Link href={href} className="group block relative aspect-[3/4] overflow-hidden rounded-[1.75rem]">
-        <Image
-          src={image}
-          alt={name}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          sizes="260px"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-        <p className="absolute bottom-5 left-5 right-5 font-display text-lg font-bold text-white">
-          Travel to {name}
-        </p>
+    <article className="shrink-0 w-[220px] sm:w-[240px] snap-start">
+      <Link
+        href={href}
+        className="group block overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/40"
+      >
+        <div className="relative aspect-[4/5] w-full overflow-hidden bg-stone-200">
+          {!showPlaceholder ? (
+            <Image
+              src={src}
+              alt={name}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              sizes="240px"
+              onError={handleError}
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-stone-100 text-stone-400">
+              <MapPin className="h-6 w-6" />
+              <span className="text-xs font-medium">{name}</span>
+            </div>
+          )}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-stone-950/70 to-transparent pt-16 pb-4 px-4">
+            <p className="font-display text-lg font-semibold text-white">{name}</p>
+          </div>
+        </div>
       </Link>
-    </motion.div>
+    </article>
   );
 }

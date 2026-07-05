@@ -6,7 +6,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft,
   FileText,
   Map as MapIcon,
   Plus,
@@ -14,6 +13,8 @@ import {
   RefreshCw,
   Share2,
   MessageCircle,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth";
@@ -30,14 +31,18 @@ import { formatCurrency } from "@/lib/utils";
 import type { Itinerary } from "@/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/shared/toast-provider";
+import {
+  confirmDeleteItinerary,
+  useDeleteItinerary,
+} from "@/hooks/use-delete-itinerary";
+import { BackButton } from "@/components/layout/back-button";
 import { PlannerBottomNav } from "@/components/planner/planner-bottom-nav";
 import { PlannerChatPanel } from "@/components/planner/planner-chat-panel";
 import { PlannerVenueCard } from "@/components/planner/planner-venue-card";
 import { PlannerDayTimeline } from "@/components/planner/planner-day-timeline";
 import { ExploreMapSheet } from "@/components/planner/explore-map-sheet";
 
-const INPUT =
-  "w-full rounded-2xl bg-white/[0.05] border border-white/[0.08] px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40";
+const INPUT = "input-light";
 
 function PlannerContent() {
   const { user } = useAuthStore();
@@ -111,6 +116,12 @@ function PlannerContent() {
   const displayItinerary = saved ?? generateMutation.data?.itinerary;
   const generatePhase = useGeneratePhase(generateMutation.isPending);
 
+  const deleteItineraryMutation = useDeleteItinerary({
+    onDeleted: (id) => {
+      if (itineraryId === id) router.push("/planner");
+    },
+  });
+
   useEnrichItineraryPlaces(displayItinerary, (updated) => {
     if (updated.id) queryClient.setQueryData(["itinerary", updated.id], updated);
   });
@@ -142,9 +153,15 @@ function PlannerContent() {
   );
 
   const mapStops = useMemo(
-    () => mapStopsFromActivities(dayActivities ?? []),
-    [dayActivities]
+    () => mapStopsFromActivities(dayActivities ?? [], center),
+    [dayActivities, center]
   );
+
+  const mapOrderById = useMemo(() => {
+    const m = new Map<string, number>();
+    mapStops.forEach((s) => m.set(s.id, s.order));
+    return m;
+  }, [mapStops]);
 
   const exploreVenues = useMemo(
     () =>
@@ -153,8 +170,9 @@ function PlannerContent() {
         title: a.title,
         imageUrl: a.imageUrl,
         category: a.category,
+        mapOrder: mapOrderById.get(a.id),
       })),
-    [dayActivities]
+    [dayActivities, mapOrderById]
   );
 
   const totalCost = displayItinerary?.totalCost
@@ -163,12 +181,12 @@ function PlannerContent() {
 
   if (!user) {
     return (
-      <div className="h-screen flex flex-col bg-[#0a0a0f]">
+      <div className="flex flex-1 flex-col min-h-0 bg-slate-50">
         <div className="flex-1 flex flex-col items-center justify-center p-8 hero-mesh">
-          <Sparkles className="h-12 w-12 text-violet-400" />
-          <h2 className="mt-4 text-2xl font-bold text-white">Plan with AI</h2>
-          <p className="mt-2 text-slate-400 text-sm text-center max-w-xs">
-            Sign in for glass-dark itineraries, maps, and venue picks.
+          <Sparkles className="h-12 w-12 text-brand-500" />
+          <h2 className="mt-4 text-2xl font-bold text-slate-900">Plan with AI</h2>
+          <p className="mt-2 text-slate-600 text-sm text-center max-w-xs">
+            Sign in for AI itineraries, maps, and venue picks.
           </p>
           <Link
             href="/login"
@@ -184,57 +202,100 @@ function PlannerContent() {
 
   if (isChatView) {
     return (
-      <div className="h-screen flex flex-col bg-[#0a0a0f] overflow-hidden">
-        <PlannerChatPanel userId={user.id} itinerary={displayItinerary ?? null} />
+      <div className="flex flex-1 flex-col min-h-0 bg-slate-50 overflow-hidden">
+        <PlannerChatPanel
+          userId={user.id}
+          itinerary={displayItinerary ?? null}
+          onItineraryDeleted={(action) => {
+            action.target_ids.forEach((id) => {
+              queryClient.removeQueries({ queryKey: ["itinerary", id] });
+            });
+            queryClient.invalidateQueries({ queryKey: ["my-itineraries"] });
+            toast({
+              title: "Trip removed",
+              description: action.confirmation_message,
+              variant: "success",
+            });
+            router.push("/planner");
+          }}
+        />
         <PlannerBottomNav active="chat" itineraryId={itineraryId} />
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#0a0a0f] overflow-hidden">
+    <div className="flex flex-1 flex-col min-h-0 bg-slate-50 overflow-hidden">
       <main className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
         {/* Map — top on mobile, right on desktop */}
-        <section className="relative h-[min(58vh,520px)] lg:h-auto lg:flex-[1.2] lg:min-w-0 shrink-0 order-1">
-          <ItineraryMap
-            center={center}
-            stops={mapStops}
-            variant="explore"
-            routeDuration={
-              hasEnoughStopsForRoute(mapStops) ? "Calculating…" : "—"
-            }
-          />
-          {displayItinerary && (
-            <ExploreMapSheet
-              venues={exploreVenues}
-              destination={displayItinerary.destination}
+        <section className="relative order-1 h-[min(58vh,520px)] lg:h-auto lg:flex-[1.2] lg:min-w-0 shrink-0 p-3 lg:p-4 bg-[#0a1622]/70 backdrop-blur-xl">
+          <div className="relative h-full w-full overflow-hidden rounded-3xl">
+            <ItineraryMap
+              center={center}
+              stops={mapStops}
+              variant="explore"
+              routeDuration={
+                hasEnoughStopsForRoute(mapStops) ? "Calculating…" : "—"
+              }
             />
-          )}
+            {displayItinerary && (
+              <ExploreMapSheet
+                venues={exploreVenues}
+                destination={displayItinerary.destination}
+              />
+            )}
+          </div>
         </section>
 
         {/* Itinerary panel */}
-        <aside className="flex flex-col flex-1 lg:flex-none lg:w-[42%] min-h-0 order-2 glass-strong border-t lg:border-t-0 lg:border-l border-white/[0.08]">
-          <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-            <Link href="/" className="icon-btn-glass" aria-label="Back">
-              <ArrowLeft className="h-4 w-4 text-white" />
-            </Link>
+        <aside className="flex flex-col flex-1 lg:flex-none lg:w-[42%] min-h-0 order-2 bg-[#0a1622]/70 backdrop-blur-xl">
+          <header className="shrink-0 flex items-center justify-between px-4 py-3">
+            <BackButton
+              className="!p-0 !border-0 !bg-transparent hover:!bg-white/10 h-9 w-9 justify-center rounded-xl"
+              label=""
+            />
             <div className="flex items-center gap-2">
               <Link href={chatHref} className="icon-btn-glass" aria-label="AI Chat">
-                <MessageCircle className="h-4 w-4 text-white" />
+                <MessageCircle className="h-4 w-4 text-slate-700" />
               </Link>
               <button type="button" className="icon-btn-glass" aria-label="Map">
-                <MapIcon className="h-4 w-4 text-white" />
+                <MapIcon className="h-4 w-4 text-slate-700" />
               </button>
               <button type="button" className="icon-btn-glass" aria-label="Add">
-                <Plus className="h-4 w-4 text-white" />
+                <Plus className="h-4 w-4 text-slate-700" />
               </button>
               <button type="button" className="icon-btn-glass" aria-label="Document">
-                <FileText className="h-4 w-4 text-white" />
+                <FileText className="h-4 w-4 text-slate-700" />
               </button>
               {displayItinerary && (
-                <button type="button" className="icon-btn-glass" aria-label="Share">
-                  <Share2 className="h-4 w-4 text-white" />
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="icon-btn-glass hover:text-red-600 hover:border-red-200"
+                    aria-label="Delete trip"
+                    disabled={deleteItineraryMutation.isPending}
+                    onClick={() => {
+                      if (
+                        !confirmDeleteItinerary(
+                          displayItinerary.destination,
+                          displayItinerary.country
+                        )
+                      ) {
+                        return;
+                      }
+                      deleteItineraryMutation.mutate(displayItinerary.id);
+                    }}
+                  >
+                    {deleteItineraryMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </button>
+                  <button type="button" className="icon-btn-glass" aria-label="Share">
+                    <Share2 className="h-4 w-4 text-slate-700" />
+                  </button>
+                </>
               )}
             </div>
           </header>
@@ -247,8 +308,8 @@ function PlannerContent() {
                 className="space-y-4"
               >
                 <div>
-                  <h2 className="text-xl font-bold text-white">New trip</h2>
-                  <p className="text-sm text-slate-400 mt-1">
+                  <h2 className="text-xl font-bold text-slate-900">New trip</h2>
+                  <p className="text-sm text-slate-600 mt-1">
                     AI builds your days — explore them on the map.
                   </p>
                 </div>
@@ -304,10 +365,10 @@ function PlannerContent() {
                   onChange={(e) => setForm({ ...form, interests: e.target.value })}
                 />
                 {generateMutation.isPending && (
-                  <p className="text-xs text-slate-400 animate-pulse">{generatePhase}</p>
+                  <p className="text-xs text-slate-500 animate-pulse">{generatePhase}</p>
                 )}
                 {generateMutation.isError && (
-                  <p className="text-xs text-red-400">{generateMutation.error?.message}</p>
+                  <p className="text-xs text-red-600">{generateMutation.error?.message}</p>
                 )}
                 <button
                   type="button"
@@ -324,17 +385,17 @@ function PlannerContent() {
             ) : (
               <>
                 <div className="mb-6">
-                  <p className="text-xs gradient-brand-text font-semibold uppercase tracking-wider">
+                  <p className="text-xs text-brand-600 font-semibold uppercase tracking-wider">
                     {displayItinerary.country}
                   </p>
-                  <h1 className="text-2xl font-bold text-white mt-1">
+                  <h1 className="text-2xl font-bold text-slate-900 mt-1">
                     {displayItinerary.destination}
                     <span className="text-slate-500 font-normal text-lg">
                       {" "}
                       · {displayItinerary.days?.length ?? 0} days
                     </span>
                   </h1>
-                  <p className="text-sm text-blue-400 font-semibold mt-1">
+                  <p className="text-sm text-brand-600 font-semibold mt-1">
                     {formatCurrency(totalCost)} est.
                   </p>
                 </div>
@@ -364,18 +425,20 @@ function PlannerContent() {
                       <PlannerDayTimeline
                         dayNumber={day.dayNumber}
                         title={day.title}
-                        activities={day.activities ?? []}
+                        activities={dayActivities ?? []}
+                        mapOrderById={mapOrderById}
                       />
 
-                      {(day.activities?.length ?? 0) > 0 && (
+                      {(dayActivities ?? []).length > 0 && (
                         <div className="mb-4">
-                          <h3 className="text-sm font-bold text-white mb-3">Places</h3>
+                          <h3 className="text-sm font-bold text-slate-900 mb-3">Places</h3>
                           <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
-                            {day.activities?.map((a) => (
+                            {(dayActivities ?? []).map((a) => (
                               <PlannerVenueCard
                                 key={a.id}
                                 title={a.title}
                                 imageUrl={a.imageUrl}
+                                mapOrder={mapOrderById.get(a.id)}
                               />
                             ))}
                           </div>
@@ -386,7 +449,7 @@ function PlannerContent() {
                         type="button"
                         disabled={regenerateDayMutation.isPending}
                         onClick={() => regenerateDayMutation.mutate(day.dayNumber)}
-                        className="text-xs text-slate-500 hover:text-violet-400 flex items-center gap-1 mb-6"
+                        className="text-xs text-slate-500 hover:text-brand-600 flex items-center gap-1 mb-6"
                       >
                         <RefreshCw
                           className={cn(
@@ -403,15 +466,13 @@ function PlannerContent() {
           </div>
 
           {displayItinerary && (
-            <div className="shrink-0 p-4 border-t border-white/[0.06]">
+            <div className="shrink-0 p-4">
               <Link
                 href={chatHref}
-                className="flex items-center justify-center gap-2 w-full h-11 rounded-2xl ai-input-gradient p-[1px]"
+                className="flex items-center justify-center gap-2 w-full h-11 rounded-2xl gradient-btn text-white text-sm font-semibold"
               >
-                <span className="flex items-center justify-center gap-2 w-full h-full rounded-[15px] bg-[#12121a]/95 text-sm font-medium text-slate-300 hover:text-white transition-colors">
-                  <MessageCircle className="h-4 w-4 text-violet-400" />
-                  Chat with AI about this trip
-                </span>
+                <MessageCircle className="h-4 w-4" />
+                Chat with AI about this trip
               </Link>
             </div>
           )}
@@ -425,8 +486,8 @@ function PlannerContent() {
 
 function PlannerLoading() {
   return (
-    <div className="h-screen bg-[#0a0a0f] flex items-center justify-center">
-      <p className="text-slate-400 text-sm">Loading…</p>
+    <div className="flex flex-1 min-h-[50vh] bg-slate-50 flex items-center justify-center">
+      <p className="text-slate-600 text-sm">Loading…</p>
     </div>
   );
 }

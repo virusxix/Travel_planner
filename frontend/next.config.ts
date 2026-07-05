@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    // dev: serve remote images directly — the on-the-fly optimizer re-fetches and
+    // resizes every Unsplash image, which dominates dev page loads
+    unoptimized: process.env.NODE_ENV === "development",
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "res.cloudinary.com" },

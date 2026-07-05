@@ -43,11 +43,8 @@ export function ItineraryMap({
     [stops]
   );
 
-  const { routeReady, routeLoading } = useItineraryRoute(
-    stopCoords,
-    travelMode,
-    mapInstance
-  );
+  const { routeReady, loading: routeLoading, duration, distance, routeError } =
+    useItineraryRoute(stopCoords, travelMode, mapInstance);
 
   const mapCenter = useMemo(() => center, [center.lat, center.lng]);
 
@@ -71,8 +68,8 @@ export function ItineraryMap({
 
   if (!apiKey) {
     return (
-      <div className="absolute inset-0 bg-[#12121a] flex items-center justify-center">
-        <p className="text-slate-400 text-sm text-center px-6">
+      <div className="absolute inset-0 bg-slate-100 flex items-center justify-center">
+        <p className="text-slate-600 text-sm text-center px-6">
           Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to frontend/.env.local
         </p>
       </div>
@@ -81,8 +78,8 @@ export function ItineraryMap({
 
   if (loadError) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-[#12121a] p-6">
-        <p className="text-red-400 text-sm text-center max-w-md">
+      <div className="absolute inset-0 flex items-center justify-center bg-slate-100 p-6">
+        <p className="text-red-600 text-sm text-center max-w-md">
           {formatMapLoadError(loadError)}
         </p>
       </div>
@@ -90,7 +87,7 @@ export function ItineraryMap({
   }
 
   if (!isLoaded) {
-    return <div className="absolute inset-0 bg-[#12121a] animate-pulse" />;
+    return <div className="absolute inset-0 bg-slate-200 animate-pulse" />;
   }
 
   const useAdvanced = advancedMarkersOk && !!mapInstance && !!CLOUD_MAP_ID;
@@ -117,7 +114,7 @@ export function ItineraryMap({
           streetViewControl: false,
           fullscreenControl: false,
           colorScheme: "DARK",
-          backgroundColor: "#12121a",
+          backgroundColor: "#0a1622",
           clickableIcons: true,
         }}
       >
@@ -138,11 +135,26 @@ export function ItineraryMap({
         )}
       </GoogleMap>
 
+      {stops.length >= 2 && (
+        <div className="absolute left-3 top-3 z-10 rounded-2xl bg-[#0a1622]/90 backdrop-blur-md border border-white/10 px-3 py-2 shadow-lg text-xs">
+          {routeLoading && <p className="text-slate-600">Loading route…</p>}
+          {!routeLoading && routeReady && duration && (
+            <p className="font-semibold text-slate-900">
+              {duration}
+              {distance ? <span className="text-slate-500 font-normal"> · {distance}</span> : null}
+            </p>
+          )}
+          {!routeLoading && routeError && (
+            <p className="text-red-600 max-w-[200px]">{routeError}</p>
+          )}
+        </div>
+      )}
+
       {/* Zoom / fit — glass controls matching app UI */}
-      <div className="absolute right-3 top-3 z-10 flex flex-col gap-1 rounded-2xl glass p-1 shadow-lg">
+      <div className="absolute right-3 top-3 z-10 flex flex-col gap-1 rounded-2xl bg-[#0a1622]/80 backdrop-blur-md border border-white/10 p-1 shadow-lg">
         <button
           type="button"
-          className="h-9 w-9 flex items-center justify-center rounded-xl text-white/90 hover:bg-white/10"
+          className="icon-btn-glass h-9 w-9"
           onClick={() => mapRef.current?.setZoom((mapRef.current.getZoom() ?? 13) + 1)}
           aria-label="Zoom in"
         >
@@ -150,7 +162,7 @@ export function ItineraryMap({
         </button>
         <button
           type="button"
-          className="h-9 w-9 flex items-center justify-center rounded-xl text-white/90 hover:bg-white/10"
+          className="icon-btn-glass h-9 w-9"
           onClick={() => mapRef.current?.setZoom((mapRef.current.getZoom() ?? 13) - 1)}
           aria-label="Zoom out"
         >
@@ -158,7 +170,7 @@ export function ItineraryMap({
         </button>
         <button
           type="button"
-          className="h-9 w-9 flex items-center justify-center rounded-xl text-white/90 hover:bg-white/10"
+          className="icon-btn-glass h-9 w-9"
           onClick={() => {
             if (mapRef.current && stops.length) {
               const bounds = new google.maps.LatLngBounds();

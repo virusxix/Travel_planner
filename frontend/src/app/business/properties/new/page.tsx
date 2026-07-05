@@ -17,7 +17,7 @@ export default function NewPropertyPage() {
     mutationFn: (body: PropertyFormValues) =>
       api<Property>("/properties", { method: "POST", body: JSON.stringify(body) }),
     onSuccess: (p) => {
-      toast({ title: "Property created", description: "You can now add rooms.", variant: "success" });
+      toast({ title: "Property created", description: "Add at least one room, then submit for review.", variant: "success" });
       router.push(`/business/properties/${p.id}`);
     },
     onError: (e: Error) => {

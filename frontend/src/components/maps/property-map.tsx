@@ -11,12 +11,7 @@ interface MapMarker {
   lng: number;
 }
 
-const darkMapStyles = [
-  { elementType: "geometry", stylers: [{ color: "#1a1a24" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#0a0a0f" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#2d2d3a" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0e1628" }] },
+const lightMapStyles = [
   { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
 ];
 
@@ -39,16 +34,16 @@ export function PropertyMap({
   if (!apiKey) {
     return (
       <div
-        className="flex items-center justify-center rounded-xl glass-card text-sm text-muted"
+        className="flex items-center justify-center rounded-xl y-card text-sm text-slate-600"
         style={{ height }}
       >
         <div className="text-center p-6 max-w-xs">
-          <p className="font-medium text-foreground">Map preview</p>
+          <p className="font-medium text-slate-900">Map preview</p>
           <p className="mt-1 text-xs">
             {center.lat.toFixed(4)}, {center.lng.toFixed(4)}
           </p>
           <p className="mt-3 text-xs leading-relaxed">
-            Add your key to <code className="text-violet-400">frontend/.env.local</code> and restart
+            Add your key to <code className="text-brand-600">frontend/.env.local</code> and restart
             the dev server.
           </p>
           {markers.map((m) => (
@@ -64,7 +59,7 @@ export function PropertyMap({
   if (loadError) {
     return (
       <div
-        className="flex items-center justify-center rounded-xl glass-card text-sm text-red-400 p-6 text-center"
+        className="flex items-center justify-center rounded-xl y-card text-sm text-red-600 p-6 text-center"
         style={{ height }}
       >
         {formatMapLoadError(loadError)}
@@ -73,7 +68,7 @@ export function PropertyMap({
   }
 
   if (!isLoaded) {
-    return <div className="animate-pulse rounded-xl bg-white/5" style={{ height, width: "100%" }} />;
+    return <div className="animate-pulse rounded-xl bg-slate-200" style={{ height, width: "100%" }} />;
   }
 
   return (
@@ -82,10 +77,15 @@ export function PropertyMap({
       center={mapCenter}
       zoom={13}
       options={{
-        disableDefaultUI: false,
-        zoomControl: true,
-        styles: darkMapStyles,
-        backgroundColor: "#0a0a0f",
+        disableDefaultUI: true,
+        zoomControl: false,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        gestureHandling: "greedy",
+        colorScheme: "DARK",
+        styles: lightMapStyles,
+        backgroundColor: "#0a1622",
       }}
     >
       {markers.map((m) => (

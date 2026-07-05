@@ -10,7 +10,7 @@ function buildMarkerContent(stop: ItineraryMapStop): HTMLElement {
 
   const badge = document.createElement("div");
   badge.style.cssText =
-    "width:36px;height:36px;border-radius:9999px;background:linear-gradient(135deg,#f97316,#ec4899,#8b5cf6);padding:2px;box-shadow:0 4px 14px rgba(236,72,153,0.45);display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;font-size:14px;font-weight:700;color:#1e1b2e;";
+    "width:36px;height:36px;border-radius:9999px;background:linear-gradient(135deg,#1d85e4,#3b82f6,#4f46e5);padding:2px;box-shadow:0 3px 10px rgba(30,64,175,0.35),0 1px 3px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;font-size:14px;font-weight:700;color:#1e293b;";
   const inner = document.createElement("div");
   inner.style.cssText =
     "width:100%;height:100%;border-radius:9999px;background:#fff;display:flex;align-items:center;justify-content:center;";

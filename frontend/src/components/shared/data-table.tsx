@@ -26,7 +26,7 @@ export function DataTable<T extends Record<string, unknown>>({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-slate-50/80 dark:bg-slate-800/50">
+            <tr className="border-b border-slate-200 bg-slate-50">
               {columns.map((col) => (
                 <th
                   key={String(col.key)}
@@ -41,7 +41,7 @@ export function DataTable<T extends Record<string, unknown>>({
             {data.map((row) => (
               <tr
                 key={String(row[keyField])}
-                className="transition-colors hover:bg-primary-50/50 dark:hover:bg-slate-800/50"
+                className="transition-colors hover:bg-blue-50/80"
               >
                 {columns.map((col) => (
                   <td key={String(col.key)} className="px-6 py-4 text-foreground">
