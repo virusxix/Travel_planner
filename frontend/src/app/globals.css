@@ -209,6 +209,7 @@
   background: linear-gradient(135deg, #5eead4, #e89a4e);
   -webkit-background-clip: text;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
   color: transparent;
 }
 
@@ -322,3 +323,16 @@
 .theme-night .bg-white .icon-btn-glass:hover { background: #f8fafc; color: #0f172a; }
 .theme-night .bg-white .pill-inactive { color: #475569; }
 .theme-night .bg-white .pill-inactive:hover { color: #0f172a; }
+
+/* Solid fallback when backdrop-filter is unsupported (e.g. Firefox with the
+   feature disabled, some low-power modes). The low-opacity glass chrome and
+   cards rely on blur to stay legible, so drop to near-solid surfaces.
+   ponytail: safety net only — all last-2-versions target browsers already
+   support backdrop-filter (which Tailwind v4 auto-prefixes with -webkit-). */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-card { background: rgba(17, 26, 40, 0.94); }
+  .hero-search .ota-search-card { background: rgba(9, 14, 26, 0.95); }
+  .bg-\[\#0a1622\]\/45,
+  .bg-\[\#0a1622\]\/55,
+  .bg-\[\#0a1622\]\/60 { background-color: rgba(10, 22, 34, 0.94); }
+}
