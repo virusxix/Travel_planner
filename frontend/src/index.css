@@ -80,4 +80,14 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
   }
+  /* Keep native date pickers inside their containers on iOS Safari */
+  input[type="date"] {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+  input[type="date"]::-webkit-date-and-time-value {
+    text-align: left;
+    min-width: 0;
+  }
 }
