@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import Navbar from '@/components/Navbar';
 import { Input } from '@/components/ui/input';
 import { Send, MapPin, Sparkles, Home } from 'lucide-react';
 import axios from 'axios';
@@ -118,12 +119,11 @@ export default function AIPlanner({ user }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="backdrop-blur-xl bg-white/60 border-b border-white/40 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-display font-medium text-primary cursor-pointer" onClick={() => navigate('/traveller')}>HiddenStay</h1>
-          <Button data-testid="back-home-from-planner" onClick={() => navigate('/traveller')} variant="ghost">Back to Home</Button>
-        </div>
-      </nav>
+      <Navbar
+        logo="HiddenStay"
+        logoTo="/traveller"
+        action={{ label: 'Back to Home', to: '/traveller', testId: 'back-home-from-planner' }}
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <motion.div

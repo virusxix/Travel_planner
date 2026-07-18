@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import Navbar from '@/components/Navbar';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import axios from 'axios';
@@ -242,16 +243,15 @@ export default function Trips({ user }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="backdrop-blur-xl bg-white/60 border-b border-white/40 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-display font-medium text-primary cursor-pointer" onClick={() => navigate('/traveller')}>HiddenStay</h1>
-          <div className="flex items-center gap-4">
-            <Button data-testid="home-link" onClick={() => navigate('/traveller')} variant="ghost">Home</Button>
-            <Button data-testid="ai-planner-nav" onClick={() => navigate('/ai-planner')} variant="ghost">AI Planner</Button>
-            <span className="text-sm text-muted-foreground">Welcome, {user?.name}</span>
-          </div>
-        </div>
-      </nav>
+      <Navbar
+        logo="HiddenStay"
+        logoTo="/traveller"
+        links={[
+          { label: 'Home', to: '/traveller', testId: 'home-link' },
+          { label: 'AI Planner', to: '/ai-planner', testId: 'ai-planner-nav' },
+        ]}
+        user={user}
+      />
 
       <div className="max-w-6xl mx-auto px-6 py-12">
         <motion.div

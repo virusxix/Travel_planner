@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import Navbar from '@/components/Navbar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { CheckCircle, XCircle, MapPin } from '@phosphor-icons/react';
 import axios from 'axios';
@@ -55,15 +56,12 @@ export default function AdminApprovals({ user }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="backdrop-blur-xl bg-white/60 border-b border-white/40 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-display font-medium text-primary cursor-pointer" onClick={() => navigate('/admin')}>HiddenStay Admin</h1>
-          <div className="flex items-center gap-4">
-            <Button data-testid="back-to-admin-dashboard" onClick={() => navigate('/admin')} variant="ghost">Dashboard</Button>
-            <Button onClick={() => { localStorage.removeItem('hiddenstay_user'); window.location.href = '/'; }} variant="ghost" size="sm">Logout</Button>
-          </div>
-        </div>
-      </nav>
+      <Navbar
+        logo="HiddenStay Admin"
+        logoTo="/admin"
+        links={[{ label: 'Dashboard', to: '/admin', testId: 'back-to-admin-dashboard' }]}
+        showLogout
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-12">
         <motion.div
