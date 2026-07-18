@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Optional
+from typing import Any, AsyncIterator, List, Optional
 
 
 @dataclass
@@ -45,7 +45,6 @@ class LlmChat:
         openai_key = os.environ.get("OPENAI_API_KEY")
         emergent = os.environ.get("EMERGENT_LLM_KEY")
 
-        # Prefer Groq (legacy stack)
         if groq_key and groq_key.strip():
             return (
                 AsyncOpenAI(api_key=groq_key.strip(), base_url="https://api.groq.com/openai/v1"),
@@ -53,7 +52,6 @@ class LlmChat:
                 "groq",
             )
 
-        # OpenAI if set and not a placeholder
         if openai_key and openai_key.strip() and not openai_key.startswith("sk_test"):
             return (
                 AsyncOpenAI(api_key=openai_key.strip()),
@@ -61,23 +59,34 @@ class LlmChat:
                 "openai",
             )
 
-        # Emergent key only if it looks like a real OpenAI-compatible key
         if emergent and emergent.strip() and emergent.startswith("sk-"):
             return AsyncOpenAI(api_key=emergent.strip()), "gpt-4o-mini", "emergent"
 
         return None, None, None
 
-    async def stream_message(self, message: UserMessage) -> AsyncIterator[Any]:
+    async def stream_message(
+        self,
+        message: UserMessage,
+        history: Optional[List[dict]] = None,
+    ) -> AsyncIterator[Any]:
+        """Stream a reply. `history` is prior turns: [{role: user|assistant, content}]."""
         try:
             client, model, provider = self._resolve_client()
             if client and model:
+                messages = [{"role": "system", "content": self.system_message}]
+                for turn in history or []:
+                    role = turn.get("role")
+                    content = (turn.get("content") or "").strip()
+                    if role in ("user", "assistant") and content:
+                        messages.append({"role": role, "content": content})
+                messages.append({"role": "user", "content": message.text})
+
                 stream = await client.chat.completions.create(
                     model=model,
-                    messages=[
-                        {"role": "system", "content": self.system_message},
-                        {"role": "user", "content": message.text},
-                    ],
+                    messages=messages,
                     stream=True,
+                    temperature=0.7,
+                    max_tokens=1800,
                 )
                 async for chunk in stream:
                     delta = chunk.choices[0].delta.content if chunk.choices else None

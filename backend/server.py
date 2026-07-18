@@ -113,9 +113,14 @@ class BookingCreate(BaseModel):
 class ApprovalAction(BaseModel):
     action: str
 
+class ChatTurn(BaseModel):
+    role: str
+    content: str
+
 class ChatRequest(BaseModel):
     message: str
     user_id: str
+    history: List[ChatTurn] = []
 
 class CheckoutRequest(BaseModel):
     property_id: str
@@ -435,27 +440,54 @@ async def get_host_reviews(host_id: str = "user-host-001"):
 
 @api_router.post("/ai/chat")
 async def ai_chat_stream(request: ChatRequest):
+    # Inject live inventory so the model recommends real stays, not invented hotels
+    props = await db.properties.find({"status": "approved"}, {"_id": 0}).to_list(50)
+    prop_lines = []
+    for p in props:
+        prop_lines.append(
+            f"- {p.get('name')} | {p.get('city')} | SGD {p.get('price_per_night')}/night | "
+            f"type={p.get('type')} | id={p.get('id')} | amenities={', '.join(p.get('amenities') or [])}"
+        )
+    inventory = "\n".join(prop_lines) if prop_lines else "(no approved listings yet)"
+
+    system_message = (
+        "You are HiddenStay's AI trip planner — a sharp, practical Southeast Asia travel "
+        "agent (not a chatbot toy). Speak like a knowledgeable local guide: warm, specific, "
+        "and useful. Never invent hotels that are not in the inventory below.\n\n"
+        "Style:\n"
+        "- Ask a short clarifying question only if the request is too vague "
+        "(city, days, budget, or travel style missing).\n"
+        "- When you have enough detail, deliver a day-by-day itinerary with morning / afternoon / "
+        "evening blocks, real place names, food suggestions, and rough SGD costs.\n"
+        "- Recommend 1–2 HiddenStay stays from the inventory that fit the route and budget; "
+        "cite the property name and nightly SGD price. Mention hosts keep 95% (5% platform fee).\n"
+        "- Format with markdown: **Day 1** headings, bullet lists (- item), short paragraphs. "
+        "No walls of text — one idea per line.\n"
+        "- Remember earlier turns in this conversation and adjust when the user asks "
+        "(\"cheaper\", \"more food\", \"skip temples\").\n"
+        "- If they ask to book, tell them to tap the stay card on the map panel.\n\n"
+        f"HiddenStay inventory (recommend ONLY from this list):\n{inventory}"
+    )
+
     async def generate_stream():
         try:
-            # Prefer legacy Groq key (same as old HiddenStay backend)
             api_key = os.environ.get("GROQ_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
             model = os.environ.get("GROQ_MODEL") or "llama-3.3-70b-versatile"
             chat = LlmChat(
                 api_key=api_key,
                 session_id=f"session-{request.user_id}",
-                system_message=(
-                    "You are a helpful travel assistant for HiddenStay, a Southeast Asia "
-                    "homestay booking platform. Help users plan their trips with day-by-day "
-                    "itineraries including activities, meals, and accommodation recommendations. "
-                    "Focus on authentic local experiences in Chiang Mai, Da Nang, and other "
-                    "Southeast Asian cities. Keep responses concise and structured. "
-                    "When recommending stays, prefer HiddenStay properties (hosts keep 95%)."
-                ),
+                system_message=system_message,
             ).with_model("groq", model)
 
+            # Last ~12 turns keep context without blowing the token window
+            history = [
+                {"role": t.role, "content": t.content}
+                for t in (request.history or [])[-12:]
+                if t.role in ("user", "assistant") and (t.content or "").strip()
+            ]
             user_message = UserMessage(text=request.message)
 
-            async for event in chat.stream_message(user_message):
+            async for event in chat.stream_message(user_message, history=history):
                 if isinstance(event, TextDelta):
                     yield f"data: {json.dumps({'content': event.content})}\n\n"
                 elif isinstance(event, StreamDone):
@@ -463,7 +495,7 @@ async def ai_chat_stream(request: ChatRequest):
                     break
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
-    
+
     return StreamingResponse(
         generate_stream(),
         media_type="text/event-stream",
