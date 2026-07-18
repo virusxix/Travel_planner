@@ -63,13 +63,13 @@ export default function TravellerHome({ user }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8 }}
-            className="max-w-4xl mx-auto bg-white/95 sm:backdrop-blur-xl sm:bg-white/90 border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.15)] rounded-2xl sm:rounded-3xl p-4 sm:p-8"
+            className="max-w-4xl w-full mx-auto bg-white/95 sm:backdrop-blur-xl sm:bg-white/90 border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.15)] rounded-2xl sm:rounded-3xl p-4 sm:p-8 overflow-hidden"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 min-w-0">
+              <div className="min-w-0">
                 <label className="block text-sm font-medium mb-1.5 sm:mb-2 text-foreground">City</label>
                 <Select value={searchParams.city} onValueChange={(value) => setSearchParams({ ...searchParams, city: value })}>
-                  <SelectTrigger data-testid="search-city-select" className="rounded-full">
+                  <SelectTrigger data-testid="search-city-select" className="rounded-full w-full min-w-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -80,29 +80,29 @@ export default function TravellerHome({ user }) {
                 </Select>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-sm font-medium mb-1.5 sm:mb-2 text-foreground">Check-in</label>
                 <Input
                   data-testid="search-checkin-input"
                   type="date"
-                  className="rounded-full text-base sm:text-sm"
+                  className="rounded-full text-base sm:text-sm px-2.5 sm:px-3"
                   value={searchParams.checkIn}
                   onChange={(e) => setSearchParams({ ...searchParams, checkIn: e.target.value })}
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-sm font-medium mb-1.5 sm:mb-2 text-foreground">Check-out</label>
                 <Input
                   data-testid="search-checkout-input"
                   type="date"
-                  className="rounded-full text-base sm:text-sm"
+                  className="rounded-full text-base sm:text-sm px-2.5 sm:px-3"
                   value={searchParams.checkOut}
                   onChange={(e) => setSearchParams({ ...searchParams, checkOut: e.target.value })}
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-sm font-medium mb-1.5 sm:mb-2 text-foreground">Guests</label>
                 <Input
                   data-testid="search-guests-input"
