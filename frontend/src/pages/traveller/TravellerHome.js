@@ -69,10 +69,10 @@ export default function TravellerHome({ user }) {
               <div className="min-w-0">
                 <label className="block text-sm font-medium mb-1.5 sm:mb-2 text-foreground">City</label>
                 <Select value={searchParams.city} onValueChange={(value) => setSearchParams({ ...searchParams, city: value })}>
-                  <SelectTrigger data-testid="search-city-select" className="rounded-full w-full min-w-0">
+                  <SelectTrigger data-testid="search-city-select" className="rounded-full w-full min-w-0 bg-white border-slate-200">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white border-slate-200 text-slate-900">
                     <SelectItem value="Chiang Mai">Chiang Mai</SelectItem>
                     <SelectItem value="Da Nang">Da Nang</SelectItem>
                     <SelectItem value="Bangkok">Bangkok</SelectItem>
