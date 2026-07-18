@@ -694,152 +694,193 @@ logger = logging.getLogger(__name__)
 async def shutdown_db_client():
     client.close()
 
+DEMO_PROPERTIES = [
+    {
+        "id": "prop-001",
+        "host_id": "user-host-001",
+        "name": "Bamboo Forest Retreat",
+        "city": "Chiang Mai",
+        "type": "Bamboo Hut",
+        "price_per_night": 45.0,
+        "images": ["https://images.pexels.com/photos/37800696/pexels-photo-37800696.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"],
+        "description": "Serene bamboo hut nestled in dense forest with stunning mountain views",
+        "amenities": ["WiFi", "Air Conditioning", "Kitchen", "Mountain View"],
+        "lat": 18.7883,
+        "lng": 98.9853,
+        "status": "approved",
+    },
+    {
+        "id": "prop-002",
+        "host_id": "user-host-001",
+        "name": "Hillside Wooden Haven",
+        "city": "Chiang Mai",
+        "type": "Wooden Cabin",
+        "price_per_night": 55.0,
+        "images": ["https://images.unsplash.com/photo-1764260664542-61117a514ba3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTZ8MHwxfHNlYXJjaHwzfHxjaGlhbmclMjBtYWklMjBob21lc3RheSUyMG5hdHVyZXxlbnwwfHx8fDE3ODQzNTA4ODd8MA&ixlib=rb-4.1.0&q=85"],
+        "description": "Rustic wooden hut nestled in hillside overlooking lush valleys",
+        "amenities": ["WiFi", "Hot Water", "Garden", "Terrace"],
+        "lat": 18.8067,
+        "lng": 98.9419,
+        "status": "approved",
+    },
+    {
+        "id": "prop-003",
+        "host_id": "user-host-001",
+        "name": "Temple View Room",
+        "city": "Da Nang",
+        "type": "Room",
+        "price_per_night": 38.0,
+        "images": ["https://images.unsplash.com/photo-1712927026825-f4519f64f025?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwyfHxzb3V0aGVhc3QlMjBhc2lhJTIwdHJvcGljYWwlMjBiZWRyb29tfGVufDB8fHx8MTc4NDM1MDg4N3ww&ixlib=rb-4.1.0&q=85"],
+        "description": "Cozy room with open window views and traditional Vietnamese architecture",
+        "amenities": ["WiFi", "Air Conditioning", "Breakfast", "City View"],
+        "lat": 16.0544,
+        "lng": 108.2022,
+        "status": "approved",
+    },
+    {
+        "id": "prop-004",
+        "host_id": "user-host-001",
+        "name": "Lakeside Green Escape",
+        "city": "Chiang Mai",
+        "type": "Homestay",
+        "price_per_night": 65.0,
+        "images": ["https://images.unsplash.com/photo-1680896444797-07917f403a49?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTZ8MHwxfHNlYXJjaHw0fHxjaGlhbmclMjBtYWklMjBob21lc3RheSUyMG5hdHVyZXxlbnwwfHx8fDE3ODQzNTA4ODd8MA&ixlib=rb-4.1.0&q=85"],
+        "description": "Peaceful homestay next to lake surrounded by lush green forest",
+        "amenities": ["WiFi", "Kitchen", "Lake Access", "Outdoor Seating"],
+        "lat": 18.7965,
+        "lng": 98.9925,
+        "status": "approved",
+    },
+    {
+        "id": "prop-005",
+        "host_id": "user-host-001",
+        "name": "Scenic Window Bedroom",
+        "city": "Da Nang",
+        "type": "Room",
+        "price_per_night": 42.0,
+        "images": ["https://images.pexels.com/photos/18292640/pexels-photo-18292640.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"],
+        "description": "Charming bedroom with panoramic window views of mountains",
+        "amenities": ["WiFi", "Breakfast", "Mountain View", "Private Bathroom"],
+        "lat": 16.0471,
+        "lng": 108.2068,
+        "status": "approved",
+    },
+    {
+        "id": "prop-006",
+        "host_id": "user-host-001",
+        "name": "Urban Chiang Mai Loft",
+        "city": "Chiang Mai",
+        "type": "Apartment",
+        "price_per_night": 35.0,
+        "images": ["https://images.pexels.com/photos/18292640/pexels-photo-18292640.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"],
+        "description": "Modern loft in the heart of old city with easy access to temples",
+        "amenities": ["WiFi", "Air Conditioning", "Kitchen", "Central Location"],
+        "lat": 18.7883,
+        "lng": 98.9853,
+        "status": "pending",
+    },
+    {
+        "id": "prop-007",
+        "host_id": "user-host-001",
+        "name": "Beachfront Da Nang Studio",
+        "city": "Da Nang",
+        "type": "Studio",
+        "price_per_night": 48.0,
+        "images": ["https://images.unsplash.com/photo-1498747468843-5ec2ad31cb89?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHw0fHxkYSUyMG5hbmclMjB2aWV0bmFtJTIwdHJhdmVsfGVufDB8fHx8MTc4NDM1MDg4N3ww&ixlib=rb-4.1.0&q=85"],
+        "description": "Cozy studio with direct beach access and ocean breeze",
+        "amenities": ["WiFi", "Beach Access", "Kitchen", "Balcony"],
+        "lat": 16.0678,
+        "lng": 108.2208,
+        "status": "pending",
+    },
+    {
+        "id": "prop-008",
+        "host_id": "user-host-001",
+        "name": "Riverside Bangkok Homestay",
+        "city": "Bangkok",
+        "type": "Homestay",
+        "price_per_night": 52.0,
+        "images": ["https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&w=1200&q=80"],
+        "description": "Quiet family homestay near the Chao Phraya with easy ferry access to old town",
+        "amenities": ["WiFi", "Air Conditioning", "Breakfast", "River View"],
+        "lat": 13.7367,
+        "lng": 100.5231,
+        "status": "approved",
+    },
+    {
+        "id": "prop-009",
+        "host_id": "user-host-001",
+        "name": "Sukhumvit City Nest",
+        "city": "Bangkok",
+        "type": "Apartment",
+        "price_per_night": 68.0,
+        "images": ["https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"],
+        "description": "Modern studio steps from BTS — night markets, cafes, and street food nearby",
+        "amenities": ["WiFi", "Air Conditioning", "Kitchen", "Gym"],
+        "lat": 13.7369,
+        "lng": 100.5601,
+        "status": "approved",
+    },
+    {
+        "id": "prop-010",
+        "host_id": "user-host-001",
+        "name": "Old Town Bangkok Courtyard",
+        "city": "Bangkok",
+        "type": "Room",
+        "price_per_night": 42.0,
+        "images": ["https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&w=1200&q=80"],
+        "description": "Traditional wooden house stay near temples and the Grand Palace area",
+        "amenities": ["WiFi", "Fan", "Shared Kitchen", "Temple Walks"],
+        "lat": 13.7525,
+        "lng": 100.4935,
+        "status": "approved",
+    },
+]
+
+
 @app.on_event("startup")
 async def seed_data():
-    existing_props = await db.properties.count_documents({})
-    if existing_props > 0:
-        return
-    
-    sample_properties = [
-        {
-            "id": "prop-001",
-            "host_id": "user-host-001",
-            "name": "Bamboo Forest Retreat",
-            "city": "Chiang Mai",
-            "type": "Bamboo Hut",
-            "price_per_night": 45.0,
-            "images": ["https://images.pexels.com/photos/37800696/pexels-photo-37800696.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"],
-            "description": "Serene bamboo hut nestled in dense forest with stunning mountain views",
-            "amenities": ["WiFi", "Air Conditioning", "Kitchen", "Mountain View"],
-            "lat": 18.7883,
-            "lng": 98.9853,
-            "status": "approved",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": "prop-002",
-            "host_id": "user-host-001",
-            "name": "Hillside Wooden Haven",
-            "city": "Chiang Mai",
-            "type": "Wooden Cabin",
-            "price_per_night": 55.0,
-            "images": ["https://images.unsplash.com/photo-1764260664542-61117a514ba3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTZ8MHwxfHNlYXJjaHwzfHxjaGlhbmclMjBtYWklMjBob21lc3RheSUyMG5hdHVyZXxlbnwwfHx8fDE3ODQzNTA4ODd8MA&ixlib=rb-4.1.0&q=85"],
-            "description": "Rustic wooden hut nestled in hillside overlooking lush valleys",
-            "amenities": ["WiFi", "Hot Water", "Garden", "Terrace"],
-            "lat": 18.8067,
-            "lng": 98.9419,
-            "status": "approved",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": "prop-003",
-            "host_id": "user-host-001",
-            "name": "Temple View Room",
-            "city": "Da Nang",
-            "type": "Room",
-            "price_per_night": 38.0,
-            "images": ["https://images.unsplash.com/photo-1712927026825-f4519f64f025?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwyfHxzb3V0aGVhc3QlMjBhc2lhJTIwdHJvcGljYWwlMjBiZWRyb29tfGVufDB8fHx8MTc4NDM1MDg4N3ww&ixlib=rb-4.1.0&q=85"],
-            "description": "Cozy room with open window views and traditional Vietnamese architecture",
-            "amenities": ["WiFi", "Air Conditioning", "Breakfast", "City View"],
-            "lat": 16.0544,
-            "lng": 108.2022,
-            "status": "approved",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": "prop-004",
-            "host_id": "user-host-001",
-            "name": "Lakeside Green Escape",
-            "city": "Chiang Mai",
-            "type": "Homestay",
-            "price_per_night": 65.0,
-            "images": ["https://images.unsplash.com/photo-1680896444797-07917f403a49?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTZ8MHwxfHNlYXJjaHw0fHxjaGlhbmclMjBtYWklMjBob21lc3RheSUyMG5hdHVyZXxlbnwwfHx8fDE3ODQzNTA4ODd8MA&ixlib=rb-4.1.0&q=85"],
-            "description": "Peaceful homestay next to lake surrounded by lush green forest",
-            "amenities": ["WiFi", "Kitchen", "Lake Access", "Outdoor Seating"],
-            "lat": 18.7965,
-            "lng": 98.9925,
-            "status": "approved",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": "prop-005",
-            "host_id": "user-host-001",
-            "name": "Scenic Window Bedroom",
-            "city": "Da Nang",
-            "type": "Room",
-            "price_per_night": 42.0,
-            "images": ["https://images.pexels.com/photos/18292640/pexels-photo-18292640.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"],
-            "description": "Charming bedroom with panoramic window views of mountains",
-            "amenities": ["WiFi", "Breakfast", "Mountain View", "Private Bathroom"],
-            "lat": 16.0471,
-            "lng": 108.2068,
-            "status": "approved",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": "prop-006",
-            "host_id": "user-host-001",
-            "name": "Urban Chiang Mai Loft",
-            "city": "Chiang Mai",
-            "type": "Apartment",
-            "price_per_night": 35.0,
-            "images": ["https://images.pexels.com/photos/18292640/pexels-photo-18292640.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"],
-            "description": "Modern loft in the heart of old city with easy access to temples",
-            "amenities": ["WiFi", "Air Conditioning", "Kitchen", "Central Location"],
-            "lat": 18.7883,
-            "lng": 98.9853,
-            "status": "pending",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": "prop-007",
-            "host_id": "user-host-001",
-            "name": "Beachfront Da Nang Studio",
-            "city": "Da Nang",
-            "type": "Studio",
-            "price_per_night": 48.0,
-            "images": ["https://images.unsplash.com/photo-1498747468843-5ec2ad31cb89?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHw0fHxkYSUyMG5hbmclMjB2aWV0bmFtJTIwdHJhdmVsfGVufDB8fHx8MTc4NDM1MDg4N3ww&ixlib=rb-4.1.0&q=85"],
-            "description": "Cozy studio with direct beach access and ocean breeze",
-            "amenities": ["WiFi", "Beach Access", "Kitchen", "Balcony"],
-            "lat": 16.0678,
-            "lng": 108.2208,
-            "status": "pending",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-    ]
-    
-    await db.properties.insert_many(sample_properties)
-    
-    sample_bookings = [
-        {
-            "id": "booking-001",
-            "property_id": "prop-001",
-            "traveller_id": "user-traveller-001",
-            "host_id": "user-host-001",
-            "check_in": "2026-02-15",
-            "check_out": "2026-02-18",
-            "guests": 2,
-            "total_price": 135.0,
-            "platform_fee": 6.75,
-            "host_payout": 128.25,
-            "status": "confirmed",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": "booking-002",
-            "property_id": "prop-004",
-            "traveller_id": "user-traveller-001",
-            "host_id": "user-host-001",
-            "check_in": "2026-03-10",
-            "check_out": "2026-03-13",
-            "guests": 2,
-            "total_price": 195.0,
-            "platform_fee": 9.75,
-            "host_payout": 185.25,
-            "status": "confirmed",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-    ]
-    
-    await db.bookings.insert_many(sample_bookings)
-    logger.info("Sample data seeded successfully")
+    # Upsert by id so existing DBs (local + Atlas) still get new cities like Bangkok
+    now = datetime.now(timezone.utc).isoformat()
+    for prop in DEMO_PROPERTIES:
+        doc = {**prop, "created_at": now}
+        await db.properties.update_one(
+            {"id": prop["id"]},
+            {"$setOnInsert": doc},
+            upsert=True,
+        )
+
+    if await db.bookings.count_documents({}) == 0:
+        await db.bookings.insert_many(
+            [
+                {
+                    "id": "booking-001",
+                    "property_id": "prop-001",
+                    "traveller_id": "user-traveller-001",
+                    "host_id": "user-host-001",
+                    "check_in": "2026-02-15",
+                    "check_out": "2026-02-18",
+                    "guests": 2,
+                    "total_price": 135.0,
+                    "platform_fee": 6.75,
+                    "host_payout": 128.25,
+                    "status": "confirmed",
+                    "created_at": now,
+                },
+                {
+                    "id": "booking-002",
+                    "property_id": "prop-004",
+                    "traveller_id": "user-traveller-001",
+                    "host_id": "user-host-001",
+                    "check_in": "2026-03-10",
+                    "check_out": "2026-03-13",
+                    "guests": 2,
+                    "total_price": 195.0,
+                    "platform_fee": 9.75,
+                    "host_payout": 185.25,
+                    "status": "confirmed",
+                    "created_at": now,
+                },
+            ]
+        )
+    logger.info("Demo properties ensured (incl. Bangkok)")

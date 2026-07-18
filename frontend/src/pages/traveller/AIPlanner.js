@@ -25,9 +25,16 @@ const API = `${BACKEND_URL}/api`;
 const CITY_CENTERS = {
   'Chiang Mai': [18.7883, 98.9853],
   'Da Nang': [16.0544, 108.2022],
-  'Bangkok': [13.7563, 100.5018],
-  'Hanoi': [21.0285, 105.8542],
+  Bangkok: [13.7563, 100.5018],
+  Hanoi: [21.0285, 105.8542],
 };
+
+const CITY_ALIASES = [
+  { city: 'Bangkok', match: /\bbangkok\b|\bbkk\b|\bkrung\s*thep\b/i },
+  { city: 'Chiang Mai', match: /\bchiang\s*mai\b|\bcnx\b/i },
+  { city: 'Da Nang', match: /\bda\s*nang\b|\bdanang\b|\bdad\b/i },
+  { city: 'Hanoi', match: /\bhanoi\b|\bhà\s*nội\b/i },
+];
 
 const SUGGESTIONS = [
   'Plan a 3-day food trip to Chiang Mai under SGD 150/night',
@@ -36,9 +43,11 @@ const SUGGESTIONS = [
 ];
 
 function detectCity(text) {
-  const t = (text || '').toLowerCase();
-  const found = Object.keys(CITY_CENTERS).find((c) => t.includes(c.toLowerCase()));
-  return found || null;
+  const t = text || '';
+  for (const { city, match } of CITY_ALIASES) {
+    if (match.test(t)) return city;
+  }
+  return null;
 }
 
 export default function AIPlanner({ user }) {
@@ -54,7 +63,7 @@ export default function AIPlanner({ user }) {
   const [loading, setLoading] = useState(false);
   const [showItinerary, setShowItinerary] = useState(false);
   const [allProperties, setAllProperties] = useState([]);
-  const [detectedCity, setDetectedCity] = useState('Chiang Mai');
+  const [detectedCity, setDetectedCity] = useState(null);
   const [copiedIdx, setCopiedIdx] = useState(null);
   /** Mobile: one panel at a time (ChatGPT-style). Desktop shows both. */
   const [mobileTab, setMobileTab] = useState('chat');
@@ -165,10 +174,11 @@ export default function AIPlanner({ user }) {
     }
   };
 
+  const activeCity = detectedCity || 'Chiang Mai';
   const cityProperties = allProperties
-    .filter((p) => p.city === detectedCity && p.status === 'approved')
+    .filter((p) => p.city === activeCity && p.status === 'approved')
     .slice(0, 6);
-  const mapCenter = CITY_CENTERS[detectedCity] || CITY_CENTERS['Chiang Mai'];
+  const mapCenter = CITY_CENTERS[activeCity] || CITY_CENTERS['Chiang Mai'];
   const showSuggestions = messages.length === 1 && !loading;
 
   const chatPanel = (
@@ -326,7 +336,7 @@ export default function AIPlanner({ user }) {
         <div className="flex items-center gap-2 shrink-0">
           {showItinerary && (
             <span className="text-xs text-neutral-500" data-testid="map-city-label">
-              {detectedCity} · {cityProperties.length}
+              {activeCity} · {cityProperties.length}
             </span>
           )}
           <button
@@ -362,6 +372,7 @@ export default function AIPlanner({ user }) {
             data-testid="map-container"
           >
             <ItineraryMap
+              key={activeCity}
               properties={cityProperties}
               center={mapCenter}
               onBookProperty={(p) => navigate(`/property/${p.id}`)}
@@ -405,7 +416,7 @@ export default function AIPlanner({ user }) {
               ))}
               {cityProperties.length === 0 && (
                 <p className="text-sm text-neutral-500 text-center py-4">
-                  No HiddenStay properties in {detectedCity} yet
+                  No HiddenStay properties in {activeCity} yet
                 </p>
               )}
             </div>

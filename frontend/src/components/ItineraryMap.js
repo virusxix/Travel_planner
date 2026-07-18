@@ -80,9 +80,14 @@ function GoogleItineraryMap({ properties, onBookProperty, height, center, zoom }
     [center]
   );
 
-  const onLoad = useCallback(
+  const fitMap = useCallback(
     (map) => {
-      if (!properties?.length) return;
+      if (!map) return;
+      if (!properties?.length) {
+        map.setCenter(mapCenter);
+        map.setZoom(zoom || 12);
+        return;
+      }
       if (properties.length === 1) {
         map.setCenter({ lat: properties[0].lat, lng: properties[0].lng });
         map.setZoom(13);
@@ -92,8 +97,10 @@ function GoogleItineraryMap({ properties, onBookProperty, height, center, zoom }
       properties.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
       map.fitBounds(bounds, 48);
     },
-    [properties]
+    [properties, mapCenter, zoom]
   );
+
+  const onLoad = useCallback((map) => fitMap(map), [fitMap]);
 
   if (loadError) {
     return (
