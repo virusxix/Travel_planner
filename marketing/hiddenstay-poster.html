@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HiddenStay — Poster</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #020508;
+      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    }
+
+    /* 24×36" ratio scaled to screen — export at 1080×1620 for social */
+    .poster {
+      position: relative;
+      width: min(1080px, 96vw);
+      aspect-ratio: 2 / 3;
+      overflow: hidden;
+      color: #f3f6fb;
+      background: #050a17;
+    }
+
+    /* Procedural night sky + ridge silhouette (CSS-only, no image needed) */
+    .bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(94, 234, 212, 0.12) 0%, transparent 55%),
+        radial-gradient(circle at 15% 18%, rgba(255,255,255,0.9) 0 1px, transparent 1px),
+        radial-gradient(circle at 72% 12%, rgba(255,255,255,0.7) 0 1px, transparent 1px),
+        radial-gradient(circle at 88% 28%, rgba(255,255,255,0.5) 0 1px, transparent 1px),
+        radial-gradient(circle at 40% 8%, rgba(255,255,255,0.6) 0 1.5px, transparent 1.5px),
+        linear-gradient(180deg, #0a1622 0%, #050a17 45%, #030810 100%);
+      background-size: 100% 100%, 200px 200px, 180px 180px, 220px 220px, 160px 160px, 100% 100%;
+    }
+
+    .ridge {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 42%;
+      background:
+        linear-gradient(175deg, transparent 38%, rgba(10, 22, 34, 0.95) 38.5%, rgba(10, 22, 34, 0.95) 100%);
+      clip-path: polygon(0 55%, 100% 28%, 100% 100%, 0 100%);
+    }
+
+    .ridge::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 22% 72%, rgba(232, 154, 78, 0.35) 0 3px, transparent 4px),
+        radial-gradient(circle at 38% 78%, rgba(232, 154, 78, 0.25) 0 2px, transparent 3px),
+        radial-gradient(circle at 55% 70%, rgba(94, 234, 212, 0.2) 0 2px, transparent 3px),
+        radial-gradient(circle at 70% 75%, rgba(232, 154, 78, 0.3) 0 2px, transparent 3px);
+    }
+
+    .scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(5,10,23,0.2) 0%, rgba(5,10,23,0.5) 55%, rgba(5,10,23,0.92) 100%);
+    }
+
+    .grid {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      padding: clamp(1.5rem, 4vw, 3rem);
+      display: grid;
+      grid-template-rows: auto 1fr auto auto;
+      gap: 0;
+    }
+
+    /* Z-pattern: brand → hook → details → CTA */
+    .brand {
+      font-size: clamp(0.65rem, 1.4vw, 0.75rem);
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      font-weight: 600;
+    }
+
+    .hero-block {
+      align-self: center;
+      padding: 1rem 0;
+    }
+
+    .hook {
+      font-size: clamp(2.4rem, 9vw, 4.5rem);
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+    }
+
+    .hook-hollow {
+      color: transparent;
+      -webkit-text-stroke: 1.5px rgba(255,255,255,0.85);
+      text-stroke: 1.5px rgba(255,255,255,0.85);
+    }
+
+    .sub {
+      margin-top: 1.25rem;
+      max-width: 28ch;
+      font-size: clamp(0.95rem, 2.2vw, 1.15rem);
+      line-height: 1.55;
+      color: rgba(255,255,255,0.58);
+      font-weight: 500;
+    }
+
+    .features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.25rem;
+      margin-top: 1.75rem;
+      font-size: clamp(0.7rem, 1.6vw, 0.8rem);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(94, 234, 212, 0.9);
+    }
+
+    .features span::before {
+      content: "◆ ";
+      font-size: 0.55em;
+      opacity: 0.7;
+    }
+
+    .details {
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding-top: 1.25rem;
+      font-size: clamp(0.75rem, 1.7vw, 0.875rem);
+      color: rgba(255,255,255,0.5);
+      line-height: 1.7;
+    }
+
+    .details strong {
+      color: rgba(255,255,255,0.85);
+      font-weight: 600;
+    }
+
+    .anchor {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.85rem 1.75rem;
+      background: linear-gradient(135deg, #5eead4, #2563eb);
+      color: #050a17;
+      font-weight: 800;
+      font-size: clamp(0.8rem, 1.8vw, 0.95rem);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border-radius: 999px;
+      box-shadow: 0 8px 32px rgba(94, 234, 212, 0.25);
+    }
+
+    .cta-arrow {
+      font-size: 1.1em;
+    }
+
+    .url {
+      font-size: clamp(0.7rem, 1.5vw, 0.8rem);
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.12em;
+    }
+
+    @media print {
+      body { background: white; }
+      .poster { width: 100%; max-width: none; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <article class="poster" role="img" aria-label="HiddenStay marketing poster">
+    <div class="bg" aria-hidden="true"></div>
+    <div class="ridge" aria-hidden="true"></div>
+    <div class="scrim" aria-hidden="true"></div>
+
+    <div class="grid">
+      <p class="brand">HiddenStay · AI travel · Asia</p>
+
+      <div class="hero-block">
+        <h1 class="hook">
+          Stays hidden<br />
+          <span class="hook-hollow">from the crowd</span>
+        </h1>
+        <p class="sub">
+          Homestays &amp; eco-lodges run by locals. Planned by AI, booked direct.
+        </p>
+        <div class="features">
+          <span>AI Trip Planner</span>
+          <span>Hidden Gems</span>
+          <span>5% commission</span>
+        </div>
+      </div>
+
+      <div class="details">
+        <strong>Homestays</strong> · Eco-lodges · Boutique inns<br />
+        Southeast Asia &amp; beyond · Book direct · Hosts keep <strong>95%</strong>
+      </div>
+
+      <footer class="anchor">
+        <a class="cta" href="https://github.com/virusxix/Travel_planner" target="_blank" rel="noopener">
+          Explore stays <span class="cta-arrow">→</span>
+        </a>
+        <span class="url">hiddenstay.ai</span>
+      </footer>
+    </div>
+  </article>
+</body>
+</html>

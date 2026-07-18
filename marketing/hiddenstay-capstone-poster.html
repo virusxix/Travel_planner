@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HiddenStay — JCU Capstone Poster (A1)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Source+Sans+3:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* A1 portrait 594×841mm · 38mm margins · title 60pt · export 200–300 DPI */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @page { size: A1 portrait; margin: 0; }
+
+    body {
+      margin: 0;
+      background: #b0b0b0;
+      font-family: "Source Sans 3", "Segoe UI", sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .viewport {
+      display: flex;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    @media print {
+      .viewport { padding: 0; display: block; }
+      body { background: white; }
+    }
+
+    .poster {
+      width: 594mm;
+      height: 841mm;
+      flex-shrink: 0;
+      background: #f4f0e8;
+      color: #2a2218;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .safe {
+      position: absolute;
+      inset: 38mm;
+      display: flex;
+      flex-direction: column;
+      gap: 3mm;
+      height: calc(841mm - 76mm);
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .logo-row {
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: 48mm 1fr 62mm;
+      align-items: center;
+      gap: 3mm;
+    }
+
+    .logo-placeholder {
+      font-size: 6.5pt;
+      font-weight: 700;
+      text-align: center;
+      color: #8a7a68;
+      border: 1px dashed #b8a890;
+      padding: 2mm;
+      line-height: 1.2;
+      height: 20mm;
+      display: grid;
+      place-items: center;
+    }
+
+    .title-main {
+      font-family: "Libre Baskerville", Georgia, serif;
+      font-size: 60pt;
+      font-weight: 700;
+      text-align: center;
+      line-height: 0.9;
+      color: #1a1510;
+    }
+
+    .title-sub {
+      text-align: center;
+      font-size: 10pt;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #5c4a38;
+      margin-top: 1mm;
+      line-height: 1.25;
+    }
+
+    /* ── Body ── */
+    .body-grid {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3mm;
+      overflow: hidden;
+    }
+
+    .top-row {
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: 1.15fr 0.68fr 0.85fr;
+      gap: 3mm;
+    }
+
+    .bottom-row {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3mm;
+      overflow: hidden;
+    }
+
+    .panel {
+      background: #e8e0d4;
+      border: 2px solid #3d3428;
+      padding: 3.5mm 4mm;
+      overflow: hidden;
+    }
+
+    .panel-title {
+      font-size: 10.5pt;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #3d3428;
+      margin-bottom: 2mm;
+      padding-bottom: 1.5mm;
+      border-bottom: 2px solid #3d3428;
+    }
+
+    .panel p, .panel li {
+      font-size: 8.5pt;
+      line-height: 1.32;
+    }
+
+    .issue-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2mm;
+      margin: 2mm 0;
+    }
+
+    .stat-box {
+      background: #d4cbb8;
+      border: 1.5px solid #3d3428;
+      padding: 1.5mm 2mm;
+      text-align: center;
+    }
+
+    .stat-box .num {
+      font-size: 13pt;
+      font-weight: 800;
+      color: #8b3a2a;
+      line-height: 1;
+    }
+
+    .stat-box .lbl {
+      font-size: 6.5pt;
+      font-weight: 600;
+      margin-top: 0.8mm;
+      line-height: 1.1;
+    }
+
+    .hook-panel {
+      background: #3d3428;
+      color: #f4f0e8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 3mm;
+      border: 2px solid #3d3428;
+    }
+
+    .hook-panel .q {
+      font-size: 8.5pt;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 1.5mm;
+      opacity: 0.85;
+    }
+
+    .hook-panel .big {
+      font-family: "Libre Baskerville", serif;
+      font-size: 11.5pt;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .brand-mark {
+      width: 14mm;
+      height: 14mm;
+      border-radius: 50%;
+      background: #2d6a5a;
+      border: 2px solid #f4f0e8;
+      display: grid;
+      place-items: center;
+      color: #a8e6cf;
+      font-size: 7pt;
+      font-weight: 800;
+      margin-top: 2mm;
+    }
+
+    .mvp-list {
+      padding-left: 4mm;
+      font-size: 8.5pt;
+      line-height: 1.35;
+    }
+
+    /* Left column */
+    .left-col {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3mm;
+      overflow: hidden;
+    }
+
+    .mission-vision {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.5mm;
+    }
+
+    .mv-box {
+      background: #d4cbb8;
+      border: 1.5px solid #3d3428;
+      padding: 2.5mm;
+    }
+
+    .mv-box h4 {
+      font-size: 7.5pt;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1mm;
+    }
+
+    .mv-box p { font-size: 8pt; line-height: 1.28; }
+
+    .mockups {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5mm;
+      background: #ddd5c8;
+      border: 2px solid #3d3428;
+      padding: 4mm;
+    }
+
+    .phone {
+      width: 32mm;
+      height: 54mm;
+      flex-shrink: 0;
+      background: #1a1510;
+      border-radius: 3.5mm;
+      border: 2px solid #3d3428;
+      padding: 2mm 1.5mm;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5mm;
+    }
+
+    .phone-label {
+      font-size: 5.5pt;
+      font-weight: 700;
+      text-align: center;
+      color: #f4f0e8;
+      text-transform: uppercase;
+    }
+
+    .phone-screen {
+      flex: 1;
+      min-height: 0;
+      background: linear-gradient(180deg, #0f2a3a, #1a3d4a);
+      border-radius: 2mm;
+      padding: 1.5mm;
+      font-size: 5pt;
+      color: #a8e6cf;
+      line-height: 1.3;
+      overflow: hidden;
+    }
+
+    .pin {
+      display: inline-block;
+      width: 3px;
+      height: 3px;
+      background: #e8a87c;
+      border-radius: 50%;
+      margin-right: 1px;
+      vertical-align: middle;
+    }
+
+    /* Right column */
+    .right-col {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5mm;
+      overflow: hidden;
+    }
+
+    .biz-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5mm;
+      margin: 1.5mm 0;
+      flex-wrap: wrap;
+    }
+
+    .biz-node {
+      background: #d4cbb8;
+      border: 1.5px solid #3d3428;
+      padding: 1.5mm 2.5mm;
+      text-align: center;
+      line-height: 1.15;
+      font-size: 7pt;
+      font-weight: 700;
+    }
+
+    .biz-arrow { font-size: 9pt; color: #5c4a38; }
+
+    .swot {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2mm;
+      font-size: 7pt;
+    }
+
+    .swot h4 {
+      font-size: 6.5pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 0.8mm;
+    }
+
+    .swot ul { padding-left: 3.5mm; line-height: 1.25; }
+
+    .features {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2mm;
+      justify-content: stretch;
+    }
+
+    .feat {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 2.5mm;
+      background: #c5b9a4;
+      border: 1.5px solid #3d3428;
+      padding: 2mm 3mm;
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      min-height: 0;
+    }
+
+    .feat-num {
+      width: 5.5mm;
+      height: 5.5mm;
+      background: #3d3428;
+      color: #f4f0e8;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 7pt;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .footer-bar {
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3mm;
+      align-items: end;
+      font-size: 7.5pt;
+      color: #5c4a38;
+      padding-top: 2.5mm;
+      border-top: 2px solid #3d3428;
+      line-height: 1.35;
+    }
+
+    .footer-bar strong { color: #1a1510; }
+    .footer-right { text-align: right; }
+    .fine { font-size: 7.5pt; margin-top: 1mm; }
+  </style>
+</head>
+<body>
+  <div class="viewport" id="viewport">
+    <article class="poster" id="poster">
+      <div class="safe">
+
+        <header class="logo-row">
+          <div class="logo-placeholder">JCUS 18<br />SEAL</div>
+          <div>
+            <h1 class="title-main">HiddenStay</h1>
+            <p class="title-sub">Fair Commission Homestays + AI Trip Planner · Southeast Asia</p>
+          </div>
+          <div class="logo-placeholder">JAMES COOK<br />UNIVERSITY<br />SINGAPORE</div>
+        </header>
+
+        <div class="body-grid">
+
+          <section class="top-row">
+            <div class="panel">
+              <h2 class="panel-title">The Issue</h2>
+              <p><strong>Independent homestays</strong> lose <strong>15–30%</strong> per booking to OTAs. Travellers plan on Google and book on different apps.</p>
+              <div class="issue-stats">
+                <div class="stat-box">
+                  <div class="num">15–30%</div>
+                  <div class="lbl">OTA fee today</div>
+                </div>
+                <div class="stat-box">
+                  <div class="num">5%</div>
+                  <div class="lbl">HiddenStay fee</div>
+                </div>
+                <div class="stat-box">
+                  <div class="num">95%</div>
+                  <div class="lbl">Host keeps</div>
+                </div>
+              </div>
+              <p class="fine">SGD 100 stay → host saves <strong>SGD 13+</strong> vs 18% OTA.</p>
+            </div>
+
+            <div class="hook-panel">
+              <p class="q">What if hosts could</p>
+              <p class="big">List free · Keep 95% · Plan &amp; book in one app?</p>
+              <div class="brand-mark">HS</div>
+            </div>
+
+            <div class="panel">
+              <h2 class="panel-title">Capstone MVP</h2>
+              <ul class="mvp-list">
+                <li><strong>10-week</strong> build · Group 63 I</li>
+                <li><strong>5 pilot</strong> listings</li>
+                <li>Stripe sandbox · AI planner</li>
+                <li>≥80% map-valid stops</li>
+              </ul>
+            </div>
+          </section>
+
+          <div class="bottom-row">
+
+            <div class="left-col">
+              <div class="panel">
+                <div class="mission-vision">
+                  <div class="mv-box">
+                    <h4>Mission</h4>
+                    <p>Fair host economics + seamless <strong>plan → map → book</strong> for travellers.</p>
+                  </div>
+                  <div class="mv-box">
+                    <h4>Vision</h4>
+                    <p>Trusted direct-booking for <strong>hidden stays</strong> across SEA — one city at a time.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mockups">
+                <div class="phone">
+                  <div class="phone-label">AI Planner</div>
+                  <div class="phone-screen">
+                    Day 1 · Chiang Mai<br />
+                    <span class="pin"></span> Old town<br />
+                    <span class="pin"></span> Homestay<br />
+                    Day 2 · Countryside
+                  </div>
+                </div>
+                <div class="phone">
+                  <div class="phone-label">Map + Book</div>
+                  <div class="phone-screen">
+                    [ MAP ]<br />
+                    ● Stay A SGD 50/n<br />
+                    ● Stay B SGD 45/n<br />
+                    <strong style="color:#e8a87c">Book →</strong>
+                  </div>
+                </div>
+                <div class="phone">
+                  <div class="phone-label">Host Portal</div>
+                  <div class="phone-screen">
+                    Earnings<br />
+                    Avail. <strong>SGD 285</strong><br />
+                    Pending SGD 95<br />
+                    5% fee · 95% yours
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="right-col">
+              <div class="panel">
+                <h2 class="panel-title">Business Model</h2>
+                <div class="biz-flow">
+                  <div class="biz-node">FOCUS<br />Supply + planner</div>
+                  <span class="biz-arrow">→</span>
+                  <div class="biz-node">STARTER<br />Free · 5%</div>
+                  <span class="biz-arrow">→</span>
+                  <div class="biz-node">4 REVENUE<br />STREAMS</div>
+                </div>
+                <p class="fine"><strong>①</strong> 5% booking · <strong>②</strong> Growth SGD 50/mo · <strong>③</strong> Featured SGD 99 · <strong>④</strong> Ads 7–10% (15% cap)</p>
+              </div>
+
+              <div class="panel">
+                <h2 class="panel-title">Why Us? (SWOT)</h2>
+                <div class="swot">
+                  <div>
+                    <h4>Strengths</h4>
+                    <ul>
+                      <li>5% vs 15–30% OTAs</li>
+                      <li>Free host portal</li>
+                      <li>Planner → book loop</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4>Weaknesses</h4>
+                    <ul>
+                      <li>Thin unit economics</li>
+                      <li>New brand</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4>Opportunities</h4>
+                    <ul>
+                      <li>SEA homestay supply</li>
+                      <li>SEO + planner content</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4>Threats</h4>
+                    <ul>
+                      <li>OTA dominance</li>
+                      <li>Guest discovery cost</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div class="features">
+                <div class="feat"><span class="feat-num">1</span> 5% marketplace</div>
+                <div class="feat"><span class="feat-num">2</span> AI planner + map</div>
+                <div class="feat"><span class="feat-num">3</span> Plan → book flow</div>
+                <div class="feat"><span class="feat-num">4</span> Growth tools (SEO)</div>
+                <div class="feat"><span class="feat-num">5</span> 18-mo survival plan</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <footer class="footer-bar">
+          <div>
+            <strong>Group 63 I</strong> — Zaw Latt Naung · Oakkar Phyoe · Eka Dian Tara Tiu · Chenyang Gu · Yihua Deng<br />
+            BU3102 / CP3102 Capstone · James Cook University Singapore
+          </div>
+          <div class="footer-right">
+            <strong>Break-even Month 18</strong> · 55 hosts · 92 bookings/mo<br />
+            hiddenstay.app (pilot)
+          </div>
+        </footer>
+
+      </div>
+    </article>
+  </div>
+  <script>
+    // ponytail: fit poster to screen without transform clipping
+    (function () {
+      var vp = document.getElementById("viewport");
+      var poster = document.getElementById("poster");
+      function fit() {
+        if (window.matchMedia("print").matches) {
+          vp.style.height = "";
+          poster.style.transform = "";
+          poster.style.marginBottom = "";
+          return;
+        }
+        var pad = 32;
+        var sw = (window.innerWidth - pad) / poster.offsetWidth;
+        var sh = (window.innerHeight - pad) / poster.offsetHeight;
+        var s = Math.min(sw, sh, 1);
+        poster.style.transform = "scale(" + s + ")";
+        poster.style.transformOrigin = "top center";
+        vp.style.height = (poster.offsetHeight * s + pad) + "px";
+        poster.style.marginBottom = (poster.offsetHeight * (s - 1)) + "px";
+      }
+      fit();
+      window.addEventListener("resize", fit);
+    })();
+  </script>
+</body>
+</html>

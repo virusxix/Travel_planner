@@ -1,0 +1,46 @@
+# Render blueprint — deploys the FastAPI backend 24/7.
+# In Render: New → Blueprint → pick this repo. Fill the `sync: false` secrets
+# (they are intentionally not stored in git).
+services:
+  - type: web
+    name: hiddenstay-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      # --- Database (MongoDB Atlas) ---
+      - key: MONGO_URL          # mongodb+srv://user:pass@cluster.mongodb.net
+        sync: false
+      - key: DB_NAME
+        value: hiddenstay
+      # --- CORS: your Vercel URL, comma-separated, no trailing slash ---
+      - key: CORS_ORIGINS       # e.g. https://hiddenstay.vercel.app
+        sync: false
+      # --- AI (Groq, same key as the legacy stack) ---
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: AI_PROVIDER
+        value: groq
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      # --- Maps ---
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      # --- Stripe (sandbox) ---
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_MODE
+        value: test
