@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import Navbar from '@/components/Navbar';
 import { CurrencyDollar, Calendar, House, TrendUp } from '@phosphor-icons/react';
 import axios from 'axios';
 
@@ -38,18 +39,17 @@ export default function HostDashboard({ user }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="backdrop-blur-xl bg-white/60 border-b border-white/40 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-display font-medium text-primary">HiddenStay Host</h1>
-          <div className="flex items-center gap-4">
-            <Button data-testid="host-listings-link" onClick={() => navigate('/host/listings')} variant="ghost">My Listings</Button>
-            <Button data-testid="host-payouts-link" onClick={() => navigate('/host/payouts')} variant="ghost">Payouts</Button>
-            <Button data-testid="host-reviews-link" onClick={() => navigate('/host/reviews')} variant="ghost">Reviews</Button>
-            <span className="text-sm text-muted-foreground">Welcome, {user?.name}</span>
-            <Button onClick={() => { localStorage.removeItem('hiddenstay_user'); window.location.href = '/'; }} variant="ghost" size="sm">Logout</Button>
-          </div>
-        </div>
-      </nav>
+      <Navbar
+        logo="HiddenStay Host"
+        logoTo="/host"
+        links={[
+          { label: 'My Listings', to: '/host/listings', testId: 'host-listings-link' },
+          { label: 'Payouts', to: '/host/payouts', testId: 'host-payouts-link' },
+          { label: 'Reviews', to: '/host/reviews', testId: 'host-reviews-link' },
+        ]}
+        user={user}
+        showLogout
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-12">
         <motion.div

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sparkles, MapPin } from 'lucide-react';
 import ShinyPill from '@/components/ui/shiny-pill';
+import Navbar from '@/components/Navbar';
 
 export default function TravellerHome({ user }) {
   const navigate = useNavigate();
@@ -22,29 +23,13 @@ export default function TravellerHome({ user }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="backdrop-blur-xl bg-white/60 border-b border-white/40 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-display font-medium text-primary">HiddenStay</h1>
-          <div className="flex items-center gap-4">
-            <Button
-              data-testid="my-trips-link"
-              onClick={() => navigate('/trips')}
-              variant="ghost"
-            >
-              My Trips
-            </Button>
-            <span className="text-sm text-muted-foreground">Welcome, {user?.name}</span>
-            <Button
-              data-testid="logout-button"
-              onClick={() => { localStorage.removeItem('hiddenstay_user'); window.location.href = '/'; }}
-              variant="ghost"
-              size="sm"
-            >
-              Logout
-            </Button>
-          </div>
-        </div>
-      </nav>
+      <Navbar
+        logo="HiddenStay"
+        logoTo="/traveller"
+        links={[{ label: 'My Trips', to: '/trips', testId: 'my-trips-link' }]}
+        user={user}
+        showLogout
+      />
 
       <div className="relative min-h-[600px] overflow-hidden">
         <div

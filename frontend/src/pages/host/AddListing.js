@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import Navbar from '@/components/Navbar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -116,12 +117,11 @@ export default function AddListing({ user }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="backdrop-blur-xl bg-white/60 border-b border-white/40 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-display font-medium text-primary cursor-pointer" onClick={() => navigate('/host')}>HiddenStay Host</h1>
-          <Button data-testid="cancel-add-listing" onClick={() => navigate('/host/listings')} variant="ghost">Cancel</Button>
-        </div>
-      </nav>
+      <Navbar
+        logo="HiddenStay Host"
+        logoTo="/host"
+        action={{ label: 'Cancel', to: '/host/listings', testId: 'cancel-add-listing' }}
+      />
 
       <div className="max-w-4xl mx-auto px-6 py-12">
         <motion.div

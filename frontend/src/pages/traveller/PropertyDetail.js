@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import Navbar from '@/components/Navbar';
 import axios from 'axios';
 import { MapPin, Users, Home, CheckCircle2, Star } from 'lucide-react';
 
@@ -59,12 +60,11 @@ export default function PropertyDetail({ user }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="backdrop-blur-xl bg-white/60 border-b border-white/40 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-display font-medium text-primary cursor-pointer" onClick={() => navigate('/traveller')}>HiddenStay</h1>
-          <Button data-testid="back-button" onClick={() => navigate(-1)} variant="ghost">Back</Button>
-        </div>
-      </nav>
+      <Navbar
+        logo="HiddenStay"
+        logoTo="/traveller"
+        action={{ label: 'Back', onClick: () => navigate(-1), testId: 'back-button' }}
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-12">
         <motion.div
