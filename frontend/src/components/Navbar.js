@@ -28,20 +28,26 @@ export default function Navbar({ logo = 'HiddenStay', logoTo, links = [], user, 
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border/70 bg-white/85 backdrop-blur-xl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={() => logoTo && navigate(logoTo)}
-          className="font-display text-xl font-semibold tracking-tight text-foreground"
+          className="font-display text-lg sm:text-xl font-semibold tracking-tight text-foreground truncate min-w-0"
         >
           {logo}
         </button>
 
-        <div className="flex items-center gap-1">
-          {/* Always-visible single action (e.g. Back) */}
+        <div className="flex items-center gap-0.5 shrink-0">
+          {/* Always-visible single action — short label on small screens */}
           {action && (
-            <button type="button" data-testid={action.testId} onClick={() => go(action)} className={linkClass}>
-              {action.label}
+            <button
+              type="button"
+              data-testid={action.testId}
+              onClick={() => go(action)}
+              className={linkClass}
+            >
+              <span className="sm:hidden">{action.shortLabel || 'Back'}</span>
+              <span className="hidden sm:inline">{action.label}</span>
             </button>
           )}
 
