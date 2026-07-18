@@ -61,6 +61,8 @@
     --ring: 10 57% 51%;
     --card: 45 20% 98%;
     --card-foreground: 163 16% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 163 16% 12%;
     --radius: 1rem;
     --chart-1: 10 57% 51%;
     --chart-2: 34 50% 64%;
