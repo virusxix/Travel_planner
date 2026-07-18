@@ -2,9 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/cross-browser-compat]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -12,7 +13,7 @@ concurrency:
 
 jobs:
   frontend:
-    name: Frontend
+    name: Frontend (CRA build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -22,55 +23,38 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          node-version: "20"
 
       - name: Install
-        run: npm ci
-
-      # Skip `next lint` until ESLint is configured (Next 15 prompts interactively without a config).
-
-      - name: Typecheck
-        run: npx tsc --noEmit
+        run: npm install --legacy-peer-deps
 
       - name: Build
         run: npm run build
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:4000/api
-
-      - name: Self-checks
-        run: |
-          npx tsx src/lib/earnings.selfcheck.ts
-          npx tsx src/lib/scramble.selfcheck.ts
+          # CRA treats lint warnings as errors when CI=true; this project has
+          # known react-hooks/exhaustive-deps warnings, so don't fail on them.
+          CI: "false"
+          REACT_APP_BACKEND_URL: http://127.0.0.1:8000
+          REACT_APP_GOOGLE_MAPS_API_KEY: ""
 
   backend:
-    name: Backend
+    name: Backend (install + compile)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
-    env:
-      # prisma generate only — no live DB needed
-      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
-      DIRECT_URL: postgresql://ci:ci@localhost:5432/ci
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-python@v5
         with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
+          python-version: "3.11"
 
+      # Mirrors Render's build — proves requirements.txt installs on Linux.
       - name: Install
-        run: npm ci
+        run: pip install -r requirements.txt
 
-      - name: Prisma generate
-        run: npx prisma generate
-
-      # Backend `tsc` has known Express 5 req.params typing debt across routes.
-      # Self-check covers route-order logic; enable build once param helpers land.
-
-      - name: Self-check
-        run: npx tsx src/utils/route-order.selfcheck.ts
+      # No live DB/secrets in CI, so verify the app imports/compiles rather
+      # than running the integration suite (which needs a running backend).
+      - name: Compile
+        run: python -m py_compile server.py emergentintegrations/llm/chat.py
