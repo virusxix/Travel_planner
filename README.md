@@ -100,6 +100,14 @@ sample/
 - [Product brief](marketing/PROJECT_BRIEF.md)
 - [Financial strategy](marketing/REAL_WORLD_FINANCIAL_STRATEGY.md)
 
+## Code review (CodeRabbit)
+
+AI PR reviews via the [CodeRabbit](https://github.com/apps/coderabbitai) GitHub App. Config: [`.coderabbit.yaml`](.coderabbit.yaml).
+
+1. Install the app on this repo: https://github.com/apps/coderabbitai/installations/new  
+2. Choose **virusxix/Travel_planner** (or all repos).  
+3. Merge `.coderabbit.yaml` to `main`, then open a PR — CodeRabbit reviews automatically.
+
 ## License
 
 Proprietary — HiddenStay capstone MVP (Group 63 I / BU3102–CP3102)
