@@ -1,0 +1,47 @@
+# CodeRabbit — HiddenStay (https://docs.coderabbit.ai/getting-started/yaml-configuration)
+language: en-US
+early_access: false
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/yarn.lock"
+    - "!**/package-lock.json"
+    - "!**/.venv/**"
+    - "!**/__pycache__/**"
+    - "!**/build/**"
+    - "!**/dist/**"
+    - "!**/*.min.js"
+    - "!marketing/**/*.png"
+    - "!**/*.lock"
+
+  path_instructions:
+    - path: "backend/**"
+      instructions: |
+        FastAPI + MongoDB API. Focus on: input validation at trust boundaries,
+        auth/role checks, Stripe webhook signature handling, secrets not logged,
+        async/DB error handling, and avoiding N+1 or unbounded queries.
+    - path: "frontend/src/**"
+      instructions: |
+        CRA React app. Focus on: correct role routing, XSS from user/AI content,
+        payment/checkout edge cases, mobile layout regressions, and reuse of
+        existing components instead of new abstractions.
+    - path: ".github/workflows/**"
+      instructions: |
+        Focus on supply-chain safety, secret exposure, and CI reliability.
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+
+chat:
+  auto_reply: true
