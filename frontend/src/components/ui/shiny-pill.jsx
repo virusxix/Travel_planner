@@ -1,77 +1,72 @@
 /**
  * OriginKit — Shiny Pill
+ * https://www.originkit.dev/components/shiny-pill
  * Animated sheen that sweeps left-to-right across text.
- * Path: frontend/src/components/ui/shiny-pill.jsx
  */
 
-import { useEffect } from "react";
-
 const KEYFRAMES_ID = "shiny-pill-keyframes";
-
-function ensureKeyframes() {
-  if (typeof document === "undefined") return;
-  if (document.getElementById(KEYFRAMES_ID)) return;
-  const style = document.createElement("style");
-  style.id = KEYFRAMES_ID;
-  style.textContent = `
-    @keyframes shinyPillSweep {
-      0% { -webkit-mask-position: 200% center; mask-position: 200% center; }
-      100% { -webkit-mask-position: -100% center; mask-position: -100% center; }
-    }
-  `;
-  document.head.appendChild(style);
-}
 
 export default function ShinyPill({
   text = "SHINY PILL",
   link,
-  textColor = "rgba(255,255,255,0.72)",
-  shineColor = "#FFFFFF",
-  speed = 2,
+  textColor = "#FFFFFF",
+  shineColor = "#78FF83",
+  speed = 1.5,
   font,
   style,
   className,
 }) {
-  useEffect(() => {
-    ensureKeyframes();
-  }, []);
+  const isFixedWidth = style?.width === "100%";
 
   const shellStyle = {
+    ...style,
     position: "relative",
-    display: "inline-block",
+    display: "inline-flex",
+    alignItems: "center",
+    boxSizing: "border-box",
+    ...(isFixedWidth ? {} : { minWidth: "max-content", width: "auto" }),
     whiteSpace: "nowrap",
     ...font,
-    ...style,
   };
 
   const shineLayerStyle = {
     position: "absolute",
     inset: 0,
+    display: "flex",
+    alignItems: "center",
+    whiteSpace: "nowrap",
     color: shineColor,
     pointerEvents: "none",
     WebkitMaskImage:
-      "linear-gradient(to right, transparent 20%, #000 45%, #000 55%, transparent 80%)",
+      "linear-gradient(to right, transparent 30%, #000 50%, transparent 70%)",
     maskImage:
-      "linear-gradient(to right, transparent 20%, #000 45%, #000 55%, transparent 80%)",
-    WebkitMaskSize: "200% 100%",
-    maskSize: "200% 100%",
-    WebkitMaskRepeat: "no-repeat",
-    maskRepeat: "no-repeat",
-    animation: `shinyPillSweep ${speed}s linear infinite`,
+      "linear-gradient(to right, transparent 30%, #000 50%, transparent 70%)",
+    WebkitMaskSize: "150% auto",
+    maskSize: "150% auto",
+    animation: `shinyPillSweep ${speed}s ease-in-out infinite`,
   };
 
   const content = (
-    <span style={shellStyle} className={className}>
+    <div style={shellStyle} className={className}>
+      <style
+        id={KEYFRAMES_ID}
+        dangerouslySetInnerHTML={{
+          __html: `@keyframes shinyPillSweep {
+            0% { -webkit-mask-position: 200%; mask-position: 200%; }
+            100% { -webkit-mask-position: -100%; mask-position: -100%; }
+          }`,
+        }}
+      />
       <span style={{ color: textColor }}>{text}</span>
       <span style={shineLayerStyle} aria-hidden="true">
         {text}
       </span>
-    </span>
+    </div>
   );
 
   if (link) {
     return (
-      <a href={link} style={{ textDecoration: "none", display: "inline-block" }}>
+      <a href={link} style={{ textDecoration: "none", display: "inline-flex" }}>
         {content}
       </a>
     );
