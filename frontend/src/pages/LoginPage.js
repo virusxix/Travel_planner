@@ -1,38 +1,21 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Canvas, useFrame } from '@react-three/fiber';
 import { Button } from '@/components/ui/button';
+import Globe from '@/components/Globe';
 import axios from 'axios';
 import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-function FloatingOrb() {
-  const meshRef = useRef();
-  
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.3) * 0.2;
-      meshRef.current.rotation.y += 0.005;
-      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.3;
-    }
-  });
-
-  return (
-    <mesh ref={meshRef} scale={2.5}>
-      <icosahedronGeometry args={[1, 1]} />
-      <meshStandardMaterial
-        color="#C97D60"
-        roughness={0.2}
-        metalness={0.1}
-        opacity={0.6}
-        transparent
-      />
-    </mesh>
-  );
-}
+/** SEA pilot markers — Chiang Mai, Bangkok, Da Nang, Singapore */
+const SEA_MARKERS = [
+  { lat: 18.79, lng: 98.98 },
+  { lat: 13.76, lng: 100.5 },
+  { lat: 16.05, lng: 108.2 },
+  { lat: 1.35, lng: 103.8 },
+];
 
 export default function LoginPage({ setUser }) {
   const navigate = useNavigate();
@@ -44,7 +27,7 @@ export default function LoginPage({ setUser }) {
       const response = await axios.post(`${API}/auth/login`, { role });
       setUser(response.data.user);
       toast.success(`Welcome back, ${response.data.user.name}!`);
-      
+
       if (role === 'traveller') navigate('/traveller');
       else if (role === 'host') navigate('/host');
       else if (role === 'admin') navigate('/admin');
@@ -57,52 +40,87 @@ export default function LoginPage({ setUser }) {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 5] }}>
-          <ambientLight intensity={0.5} />
-          <pointLight position={[10, 10, 10]} />
-          <FloatingOrb />
-        </Canvas>
+    <div className="min-h-[100dvh] bg-[#f4f4f5] relative overflow-hidden">
+      {/* Dark radial pocket so the dotted globe reads; fades to traveller light */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_50%_42%,#27272a_0%,#18181b_42%,#f4f4f5_78%)]"
+      />
+
+      <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
+        <div className="w-[min(920px,140vw)] h-[min(920px,140vw)] opacity-90">
+          <div className="w-full h-full pointer-events-auto">
+            <Globe
+              speed={2}
+              smoothing={8}
+              scale={9}
+              direction="left"
+              stopOnHover
+              fill="dots"
+              showGrid={false}
+              showOutline
+              oceanColor="#18181b"
+              outlineColor="#e7e5e4"
+              fillColor="#fafaf9"
+              dots={{ color: '#fafaf9', size: 4, density: 7, allDots: false }}
+              markerConfig={{
+                markers: SEA_MARKERS,
+                color: '#C45C3E',
+                size: 48,
+              }}
+              initialLatitude={8}
+              initialLongitude={105}
+              detail={5}
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-8">
+      <div className="relative z-10 min-h-[100dvh] flex items-center justify-center p-6 sm:p-8">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="max-w-2xl w-full backdrop-blur-xl bg-white/60 border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.08)] backdrop-saturate-150 rounded-3xl p-12"
+          transition={{ duration: 0.7, ease: 'easeOut' }}
+          className="max-w-md w-full rounded-3xl bg-card border border-border/80 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.18)] p-8 sm:p-10"
         >
-          <div className="text-center mb-12">
+          <div className="text-center mb-10">
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.15, duration: 0.5 }}
+              className="text-primary text-xs font-bold uppercase tracking-[0.2em] mb-3"
+            >
+              Southeast Asia
+            </motion.p>
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-              className="text-5xl sm:text-6xl font-display font-medium tracking-tight text-foreground mb-4"
+              transition={{ delay: 0.2, duration: 0.55 }}
+              className="text-4xl sm:text-5xl font-display font-medium tracking-tight text-foreground mb-3"
             >
               HiddenStay
             </motion.h1>
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="text-lg text-muted-foreground"
+              transition={{ delay: 0.35, duration: 0.55 }}
+              className="text-base text-muted-foreground"
             >
               Discover authentic Southeast Asia homestays
             </motion.p>
           </div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
-            className="space-y-4"
+            transition={{ delay: 0.5, duration: 0.55 }}
+            className="space-y-3"
           >
             <Button
               data-testid="login-traveller-button"
               onClick={() => handleLogin('traveller')}
               disabled={loading}
-              className="w-full h-14 text-lg rounded-full bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 hover:-translate-y-1 hover:shadow-lg active:scale-95"
+              className="w-full h-12 text-base rounded-full bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]"
             >
               Login as Traveller
             </Button>
@@ -111,7 +129,8 @@ export default function LoginPage({ setUser }) {
               data-testid="login-host-button"
               onClick={() => handleLogin('host')}
               disabled={loading}
-              className="w-full h-14 text-lg rounded-full bg-secondary hover:bg-secondary/90 text-secondary-foreground transition-all duration-300 hover:-translate-y-1 hover:shadow-lg active:scale-95"
+              variant="outline"
+              className="w-full h-12 text-base rounded-full bg-white border-border text-foreground hover:bg-muted transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
             >
               Login as Host
             </Button>
@@ -120,7 +139,8 @@ export default function LoginPage({ setUser }) {
               data-testid="login-admin-button"
               onClick={() => handleLogin('admin')}
               disabled={loading}
-              className="w-full h-14 text-lg rounded-full bg-accent hover:bg-accent/90 text-accent-foreground transition-all duration-300 hover:-translate-y-1 hover:shadow-lg active:scale-95"
+              variant="ghost"
+              className="w-full h-12 text-base rounded-full border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-300 active:scale-[0.98]"
             >
               Login as Admin
             </Button>
@@ -129,7 +149,7 @@ export default function LoginPage({ setUser }) {
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
+            transition={{ delay: 0.7, duration: 0.5 }}
             className="text-center mt-8 text-sm text-muted-foreground"
           >
             Demo mode: Choose your role to explore
