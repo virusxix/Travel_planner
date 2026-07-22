@@ -6,6 +6,18 @@
 
 const KEYFRAMES_ID = "shiny-pill-keyframes";
 
+function ensureKeyframes() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(KEYFRAMES_ID)) return;
+  const style = document.createElement("style");
+  style.id = KEYFRAMES_ID;
+  style.textContent = `@keyframes shinyPillSweep {
+    0% { -webkit-mask-position: 200%; mask-position: 200%; }
+    100% { -webkit-mask-position: -100%; mask-position: -100%; }
+  }`;
+  document.head.appendChild(style);
+}
+
 export default function ShinyPill({
   text = "SHINY PILL",
   link,
@@ -16,6 +28,8 @@ export default function ShinyPill({
   style,
   className,
 }) {
+  ensureKeyframes();
+
   const isFixedWidth = style?.width === "100%";
 
   const shellStyle = {
@@ -47,21 +61,12 @@ export default function ShinyPill({
   };
 
   const content = (
-    <div style={shellStyle} className={className}>
-      <style
-        id={KEYFRAMES_ID}
-        dangerouslySetInnerHTML={{
-          __html: `@keyframes shinyPillSweep {
-            0% { -webkit-mask-position: 200%; mask-position: 200%; }
-            100% { -webkit-mask-position: -100%; mask-position: -100%; }
-          }`,
-        }}
-      />
+    <span style={shellStyle} className={className}>
       <span style={{ color: textColor }}>{text}</span>
       <span style={shineLayerStyle} aria-hidden="true">
         {text}
       </span>
-    </div>
+    </span>
   );
 
   if (link) {

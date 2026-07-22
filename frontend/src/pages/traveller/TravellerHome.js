@@ -48,11 +48,26 @@ export default function TravellerHome({ user }) {
             transition={{ duration: 0.8 }}
             className="text-center mb-8 sm:mb-12"
           >
-            {/* Plain wrapping text on mobile — ShinyPill uses nowrap and clips on phones */}
-            <h1 className="text-[1.75rem] leading-tight sm:text-5xl lg:text-[4rem] font-display font-semibold tracking-tight text-white mb-3 sm:mb-6 px-1">
-              Discover Hidden Gems
-              <br />
-              Across Southeast Asia
+            {/* Two short ShinyPill lines — nowrap per line, no mobile clip */}
+            <h1 className="text-[1.75rem] leading-tight sm:text-5xl lg:text-[4rem] font-display font-semibold tracking-tight mb-3 sm:mb-6 px-1">
+              <span className="block">
+                <ShinyPill
+                  text="Discover Hidden Gems"
+                  textColor="rgba(255,255,255,0.9)"
+                  shineColor="#E8A08A"
+                  speed={2.2}
+                  className="text-[1.75rem] sm:text-5xl lg:text-[4rem] font-display font-semibold tracking-tight"
+                />
+              </span>
+              <span className="block">
+                <ShinyPill
+                  text="Across Southeast Asia"
+                  textColor="rgba(255,255,255,0.9)"
+                  shineColor="#E8A08A"
+                  speed={2.2}
+                  className="text-[1.75rem] sm:text-5xl lg:text-[4rem] font-display font-semibold tracking-tight"
+                />
+              </span>
             </h1>
             <p className="text-sm sm:text-xl text-white/85 max-w-xl mx-auto leading-relaxed px-2">
               Authentic homestays at 5% commission. Hosts keep 95%.
@@ -155,16 +170,32 @@ export default function TravellerHome({ user }) {
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-3 sm:mb-4">Why HiddenStay</p>
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-display font-semibold tracking-tight leading-snug text-foreground px-2">
             <span className="sm:hidden">
-              Fair Commission,
-              <br />
-              Authentic Stays
+              <span className="block">
+                <ShinyPill
+                  text="Fair Commission,"
+                  textColor="rgba(30, 41, 35, 0.85)"
+                  shineColor="#C45A3A"
+                  speed={2.2}
+                  className="text-2xl font-display font-semibold tracking-tight"
+                />
+              </span>
+              <span className="block">
+                <ShinyPill
+                  text="Authentic Stays"
+                  textColor="rgba(30, 41, 35, 0.85)"
+                  shineColor="#C45A3A"
+                  speed={2.2}
+                  className="text-2xl font-display font-semibold tracking-tight"
+                />
+              </span>
             </span>
-            <span className="hidden sm:inline">
+            <span className="hidden sm:inline-flex justify-center w-full">
               <ShinyPill
                 text="Fair Commission, Authentic Stays"
                 textColor="rgba(30, 41, 35, 0.85)"
                 shineColor="#C45A3A"
                 speed={2.2}
+                className="text-4xl lg:text-5xl font-display font-semibold tracking-tight"
               />
             </span>
           </h2>
