@@ -31,7 +31,21 @@ function FitBounds({ points }) {
   return null;
 }
 
-function LeafletFallback({ properties, onBookProperty, height, center, zoom }) {
+const userLocationIcon = new L.DivIcon({
+  className: 'hidden-stay-marker',
+  html: `<div style="width:18px;height:18px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 0 0 6px rgba(37,99,235,0.25)"></div>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
+
+function LeafletFallback({ properties, onBookProperty, height, center, zoom, userLocation }) {
+  const fitPoints =
+    properties?.length > 0
+      ? properties
+      : userLocation
+        ? [{ lat: userLocation.lat, lng: userLocation.lng }]
+        : [];
+
   return (
     <div className="w-full h-full rounded-2xl overflow-hidden border border-border" data-testid="itinerary-map">
       <MapContainer center={center} zoom={zoom} style={{ height, width: '100%' }} scrollWheelZoom>
@@ -39,7 +53,17 @@ function LeafletFallback({ properties, onBookProperty, height, center, zoom }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <FitBounds points={properties} />
+        <FitBounds points={fitPoints} />
+        {userLocation && (!properties || properties.length === 0) && (
+          <LeafletMarker
+            position={[userLocation.lat, userLocation.lng]}
+            icon={userLocationIcon}
+          >
+            <Popup>
+              <p className="text-sm font-medium">You are here</p>
+            </Popup>
+          </LeafletMarker>
+        )}
         {properties.map((prop, index) => (
           <LeafletMarker key={prop.id} position={[prop.lat, prop.lng]} icon={numberedStayIcon(index + 1)}>
             <Popup>
@@ -68,7 +92,7 @@ function LeafletFallback({ properties, onBookProperty, height, center, zoom }) {
   );
 }
 
-function GoogleItineraryMap({ properties, onBookProperty, height, center, zoom }) {
+function GoogleItineraryMap({ properties, onBookProperty, height, center, zoom, userLocation }) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'hiddenstay-google-maps',
     googleMapsApiKey: MAPS_KEY,
@@ -84,6 +108,11 @@ function GoogleItineraryMap({ properties, onBookProperty, height, center, zoom }
     (map) => {
       if (!map) return;
       if (!properties?.length) {
+        if (userLocation) {
+          map.setCenter({ lat: userLocation.lat, lng: userLocation.lng });
+          map.setZoom(zoom || 14);
+          return;
+        }
         map.setCenter(mapCenter);
         map.setZoom(zoom || 12);
         return;
@@ -97,7 +126,7 @@ function GoogleItineraryMap({ properties, onBookProperty, height, center, zoom }
       properties.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
       map.fitBounds(bounds, 48);
     },
-    [properties, mapCenter, zoom]
+    [properties, mapCenter, zoom, userLocation]
   );
 
   const onLoad = useCallback((map) => fitMap(map), [fitMap]);
@@ -144,6 +173,20 @@ function GoogleItineraryMap({ properties, onBookProperty, height, center, zoom }
           clickableIcons: true,
         }}
       >
+        {userLocation && (!properties || properties.length === 0) && (
+          <Marker
+            position={{ lat: userLocation.lat, lng: userLocation.lng }}
+            title="You are here"
+            icon={{
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 10,
+              fillColor: '#2563eb',
+              fillOpacity: 1,
+              strokeColor: '#ffffff',
+              strokeWeight: 3,
+            }}
+          />
+        )}
         {properties.map((prop, index) => (
           <Marker
             key={prop.id}
@@ -169,6 +212,7 @@ export default function ItineraryMap({
   height = '100%',
   center = [18.7883, 98.9853],
   zoom = 12,
+  userLocation = null,
 }) {
   if (!MAPS_KEY) {
     return (
@@ -178,6 +222,7 @@ export default function ItineraryMap({
         height={height}
         center={center}
         zoom={zoom}
+        userLocation={userLocation}
       />
     );
   }
@@ -189,6 +234,7 @@ export default function ItineraryMap({
       height={height}
       center={center}
       zoom={zoom}
+      userLocation={userLocation}
     />
   );
 }

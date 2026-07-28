@@ -67,7 +67,11 @@ export default function AIPlanner({ user }) {
   const [copiedIdx, setCopiedIdx] = useState(null);
   /** Mobile: one panel at a time (ChatGPT-style). Desktop shows both. */
   const [mobileTab, setMobileTab] = useState('chat');
+  const [userLocation, setUserLocation] = useState(null);
+  const [locating, setLocating] = useState(true);
   const messagesEndRef = useRef(null);
+
+  const hasUserChat = messages.some((m) => m.role === 'user');
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -76,6 +80,27 @@ export default function AIPlanner({ user }) {
   useEffect(() => {
     axios.get(`${API}/properties`).then((r) => setAllProperties(r.data)).catch(() => {});
   }, []);
+
+  // Before any AI trip request: center map on the user's device location
+  useEffect(() => {
+    if (hasUserChat || showItinerary) {
+      setLocating(false);
+      return;
+    }
+    if (!navigator.geolocation) {
+      setLocating(false);
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { enableHighAccuracy: false, timeout: 12000, maximumAge: 60_000 }
+    );
+  }, [hasUserChat, showItinerary]);
 
   const copyMessage = async (text, index) => {
     try {
@@ -334,6 +359,11 @@ export default function AIPlanner({ user }) {
           <span className="truncate">Itinerary Map</span>
         </h2>
         <div className="flex items-center gap-2 shrink-0">
+          {!showItinerary && userLocation && (
+            <span className="text-xs text-neutral-500" data-testid="map-you-are-here">
+              You are here
+            </span>
+          )}
           {showItinerary && (
             <span className="text-xs text-neutral-500" data-testid="map-city-label">
               {activeCity} · {cityProperties.length}
@@ -350,20 +380,56 @@ export default function AIPlanner({ user }) {
       </div>
 
       {!showItinerary ? (
-        <div className="flex-1 flex items-center justify-center text-center px-4 rounded-2xl bg-[#f4f4f5] min-h-[200px]">
-          <div>
-            <MapPin className="w-10 h-10 sm:w-12 sm:h-12 text-neutral-300 mx-auto mb-3" />
-            <p className="text-sm text-neutral-500">
-              Ask for a trip plan — the map and HiddenStay stays appear here
-            </p>
-            <button
-              type="button"
-              onClick={() => setMobileTab('chat')}
-              className="lg:hidden mt-4 text-sm font-medium text-neutral-800 underline"
-            >
-              Back to chat
-            </button>
-          </div>
+        <div className="flex-1 flex flex-col gap-2 min-h-0">
+          {userLocation ? (
+            <>
+              <div
+                className="flex-1 min-h-[200px] sm:min-h-[240px] rounded-2xl overflow-hidden"
+                data-testid="map-container-user-location"
+              >
+                <ItineraryMap
+                  key="user-location"
+                  properties={[]}
+                  center={[userLocation.lat, userLocation.lng]}
+                  zoom={14}
+                  userLocation={userLocation}
+                />
+              </div>
+              <p className="text-xs text-neutral-500 text-center px-2">
+                Your current location — ask AI to plan a trip and stays will appear here
+              </p>
+              <button
+                type="button"
+                onClick={() => setMobileTab('chat')}
+                className="lg:hidden text-sm font-medium text-neutral-800 underline"
+              >
+                Back to chat
+              </button>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-center px-4 rounded-2xl bg-[#f4f4f5] min-h-[200px]">
+              <div>
+                <MapPin className="w-10 h-10 sm:w-12 sm:h-12 text-neutral-300 mx-auto mb-3" />
+                <p className="text-sm text-neutral-500">
+                  {locating
+                    ? 'Finding your location…'
+                    : 'Ask for a trip plan — the map and HiddenStay stays appear here'}
+                </p>
+                {!locating && (
+                  <p className="text-xs text-neutral-400 mt-2">
+                    Allow location access to see yourself on the map first
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setMobileTab('chat')}
+                  className="lg:hidden mt-4 text-sm font-medium text-neutral-800 underline"
+                >
+                  Back to chat
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex-1 flex flex-col gap-3 sm:gap-4 overflow-hidden min-h-0">
