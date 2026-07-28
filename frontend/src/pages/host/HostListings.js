@@ -20,7 +20,7 @@ export default function HostListings({ user }) {
 
   const fetchProperties = async () => {
     try {
-      const response = await axios.get(`${API}/properties`);
+      const response = await axios.get(`${API}/properties?status=all`);
       const hostProperties = response.data.filter(p => p.host_id === user.id);
       setProperties(hostProperties);
     } catch (error) {

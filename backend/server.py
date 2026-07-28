@@ -147,10 +147,11 @@ async def get_properties(city: Optional[str] = None, status: Optional[str] = Non
     query = {}
     if city:
         query["city"] = city
-    if status:
+    if status and status != "all":
         query["status"] = status
-    else:
+    elif not status:
         query["status"] = "approved"
+    # status=all → no status filter (admin dashboards)
     properties = await db.properties.find(query, {"_id": 0}).to_list(100)
     for prop in properties:
         if isinstance(prop.get('created_at'), str):
@@ -838,6 +839,39 @@ DEMO_PROPERTIES = [
 ]
 
 
+# Demo bookings: fees = 5% / 95% of total_price; created_at near stay for chart months
+DEMO_BOOKINGS = [
+    {
+        "id": "booking-001",
+        "property_id": "prop-001",
+        "traveller_id": "user-traveller-001",
+        "host_id": "user-host-001",
+        "check_in": "2026-02-15",
+        "check_out": "2026-02-18",
+        "guests": 2,
+        "total_price": 135.0,
+        "platform_fee": 6.75,
+        "host_payout": 128.25,
+        "status": "confirmed",
+        "created_at": "2026-02-10T10:00:00+00:00",
+    },
+    {
+        "id": "booking-002",
+        "property_id": "prop-004",
+        "traveller_id": "user-traveller-001",
+        "host_id": "user-host-001",
+        "check_in": "2026-03-10",
+        "check_out": "2026-03-13",
+        "guests": 2,
+        "total_price": 195.0,
+        "platform_fee": 9.75,
+        "host_payout": 185.25,
+        "status": "confirmed",
+        "created_at": "2026-03-05T10:00:00+00:00",
+    },
+]
+
+
 @app.on_event("startup")
 async def seed_data():
     # Upsert by id so existing DBs (local + Atlas) still get new cities like Bangkok
@@ -850,37 +884,11 @@ async def seed_data():
             upsert=True,
         )
 
-    if await db.bookings.count_documents({}) == 0:
-        await db.bookings.insert_many(
-            [
-                {
-                    "id": "booking-001",
-                    "property_id": "prop-001",
-                    "traveller_id": "user-traveller-001",
-                    "host_id": "user-host-001",
-                    "check_in": "2026-02-15",
-                    "check_out": "2026-02-18",
-                    "guests": 2,
-                    "total_price": 135.0,
-                    "platform_fee": 6.75,
-                    "host_payout": 128.25,
-                    "status": "confirmed",
-                    "created_at": now,
-                },
-                {
-                    "id": "booking-002",
-                    "property_id": "prop-004",
-                    "traveller_id": "user-traveller-001",
-                    "host_id": "user-host-001",
-                    "check_in": "2026-03-10",
-                    "check_out": "2026-03-13",
-                    "guests": 2,
-                    "total_price": 195.0,
-                    "platform_fee": 9.75,
-                    "host_payout": 185.25,
-                    "status": "confirmed",
-                    "created_at": now,
-                },
-            ]
+    for booking in DEMO_BOOKINGS:
+        # Full $set upsert — avoid $setOnInsert+$set same-path conflict
+        await db.bookings.update_one(
+            {"id": booking["id"]},
+            {"$set": booking},
+            upsert=True,
         )
-    logger.info("Demo properties ensured (incl. Bangkok)")
+    logger.info("Demo properties & bookings ensured")
