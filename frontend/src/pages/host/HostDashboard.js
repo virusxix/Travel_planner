@@ -33,13 +33,13 @@ export default function HostDashboard({ user }) {
       const [earningsRes, bookingsRes, propertiesRes] = await Promise.all([
         axios.get(`${API}/host/earnings?host_id=${user.id}`),
         axios.get(`${API}/bookings?user_id=${user.id}&role=host`),
-        axios.get(`${API}/properties?status=all`),
+        axios.get(`${API}/host/properties?host_id=${user.id}`),
       ]);
       const hostBookings = bookingsRes.data || [];
       setAllBookings(hostBookings);
       setEarnings(earningsRes.data);
       setBookings(hostBookings.slice(0, 5));
-      setProperties((propertiesRes.data || []).filter((p) => p.host_id === user.id));
+      setProperties(propertiesRes.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {

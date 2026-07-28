@@ -3,8 +3,10 @@ from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo.errors import DuplicateKeyError
 import os
 import logging
+import asyncio
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
@@ -18,14 +20,65 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
+# Motor pools connections; sized for concurrent demo traffic on one uvicorn worker
+client = AsyncIOMotorClient(mongo_url, maxPoolSize=50, minPoolSize=1)
 db = client[os.environ['DB_NAME']]
 
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY") or "sk_test_emergent"
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
+# Cap parallel AI streams so a few chats don't starve bookings/payments on one worker
+AI_MAX_CONCURRENT = max(1, int(os.environ.get("AI_MAX_CONCURRENT", "3")))
+AI_SEM = asyncio.Semaphore(AI_MAX_CONCURRENT)
+
+# ponytail: per-host asyncio lock stops payout double-spend on a single worker.
+# Ceiling: multi-worker deploy needs a Mongo balance ledger / transaction instead.
+_payout_locks: Dict[str, asyncio.Lock] = {}
+_payout_locks_guard = asyncio.Lock()
+
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
+
+
+async def _host_payout_lock(host_id: str) -> asyncio.Lock:
+    async with _payout_locks_guard:
+        lock = _payout_locks.get(host_id)
+        if lock is None:
+            lock = asyncio.Lock()
+            _payout_locks[host_id] = lock
+        return lock
+
+
+async def _sum_field(collection, match: dict, field: str) -> float:
+    pipeline = [
+        {"$match": match},
+        {"$group": {"_id": None, "total": {"$sum": f"${field}"}}},
+    ]
+    rows = await collection.aggregate(pipeline).to_list(1)
+    return float(rows[0]["total"]) if rows else 0.0
+
+
+async def ensure_indexes():
+    """Indexes that keep concurrent writes correct and reads fast under load."""
+    await db.bookings.create_index(
+        [("stripe_session_id", 1)],
+        unique=True,
+        sparse=True,
+        name="uniq_stripe_session",
+    )
+    await db.bookings.create_index([("host_id", 1)], name="bookings_host")
+    await db.bookings.create_index([("traveller_id", 1)], name="bookings_traveller")
+    await db.reviews.create_index(
+        [("booking_id", 1)],
+        unique=True,
+        name="uniq_review_booking",
+    )
+    await db.properties.create_index([("status", 1), ("host_id", 1)], name="props_status_host")
+    await db.payment_transactions.create_index(
+        [("session_id", 1)],
+        unique=True,
+        name="uniq_payment_session",
+    )
 
 
 @api_router.get("/")
@@ -142,21 +195,30 @@ async def demo_login(request: LoginRequest):
         raise HTTPException(status_code=400, detail="Invalid role")
     return {"user": user_data, "token": f"demo-token-{request.role}"}
 
+def _parse_property_dates(properties: List[dict]) -> List[dict]:
+    for prop in properties:
+        if isinstance(prop.get('created_at'), str):
+            prop['created_at'] = datetime.fromisoformat(prop['created_at'])
+    return properties
+
+
 @api_router.get("/properties")
 async def get_properties(city: Optional[str] = None, status: Optional[str] = None):
     query = {}
     if city:
         query["city"] = city
-    if status and status != "all":
+    if status:
         query["status"] = status
-    elif not status:
+    else:
         query["status"] = "approved"
-    # status=all → no status filter (admin dashboards)
     properties = await db.properties.find(query, {"_id": 0}).to_list(100)
-    for prop in properties:
-        if isinstance(prop.get('created_at'), str):
-            prop['created_at'] = datetime.fromisoformat(prop['created_at'])
-    return properties
+    return _parse_property_dates(properties)
+
+
+@api_router.get("/host/properties")
+async def get_host_properties(host_id: str = "user-host-001"):
+    properties = await db.properties.find({"host_id": host_id}, {"_id": 0}).to_list(200)
+    return _parse_property_dates(properties)
 
 @api_router.get("/properties/{property_id}")
 async def get_property(property_id: str):
@@ -236,8 +298,7 @@ async def get_admin_overview():
     total_properties = await db.properties.count_documents({})
     pending_approvals = await db.properties.count_documents({"status": "pending"})
     total_bookings = await db.bookings.count_documents({})
-    bookings = await db.bookings.find({}, {"_id": 0}).to_list(1000)
-    platform_revenue = sum(b.get("platform_fee", 0) for b in bookings)
+    platform_revenue = await _sum_field(db.bookings, {}, "platform_fee")
     return {
         "total_properties": total_properties,
         "pending_approvals": pending_approvals,
@@ -248,10 +309,13 @@ async def get_admin_overview():
 @api_router.get("/admin/pending-properties")
 async def get_pending_properties():
     properties = await db.properties.find({"status": "pending"}, {"_id": 0}).to_list(100)
-    for prop in properties:
-        if isinstance(prop.get('created_at'), str):
-            prop['created_at'] = datetime.fromisoformat(prop['created_at'])
-    return properties
+    return _parse_property_dates(properties)
+
+
+@api_router.get("/admin/properties")
+async def get_admin_properties():
+    properties = await db.properties.find({}, {"_id": 0}).to_list(200)
+    return _parse_property_dates(properties)
 
 @api_router.patch("/admin/properties/{property_id}/status")
 async def update_property_status(property_id: str, action: ApprovalAction):
@@ -263,14 +327,18 @@ async def update_property_status(property_id: str, action: ApprovalAction):
 
 @api_router.get("/host/earnings")
 async def get_host_earnings(host_id: str = "user-host-001"):
-    bookings = await db.bookings.find({"host_id": host_id}, {"_id": 0}).to_list(1000)
-    total_payout = sum(b.get("host_payout", 0) for b in bookings)
-    total_platform_fee = sum(b.get("platform_fee", 0) for b in bookings)
+    match = {"host_id": host_id}
+    total_payout = await _sum_field(db.bookings, match, "host_payout")
+    total_platform_fee = await _sum_field(db.bookings, match, "platform_fee")
+    total_bookings = await db.bookings.count_documents(match)
 
-    payouts = await db.payout_requests.find({"host_id": host_id}, {"_id": 0}).to_list(1000)
-    withdrawn = sum(p.get("amount", 0) for p in payouts if p.get("status") in ("pending", "paid"))
-    pending_payouts = sum(p.get("amount", 0) for p in payouts if p.get("status") == "pending")
-    paid_payouts = sum(p.get("amount", 0) for p in payouts if p.get("status") == "paid")
+    pending_payouts = await _sum_field(
+        db.payout_requests, {"host_id": host_id, "status": "pending"}, "amount"
+    )
+    paid_payouts = await _sum_field(
+        db.payout_requests, {"host_id": host_id, "status": "paid"}, "amount"
+    )
+    withdrawn = pending_payouts + paid_payouts
 
     return {
         "available_earnings": round(max(0.0, total_payout - withdrawn), 2),
@@ -278,7 +346,7 @@ async def get_host_earnings(host_id: str = "user-host-001"):
         "pending_payouts": round(pending_payouts, 2),
         "paid_payouts": round(paid_payouts, 2),
         "platform_fee": round(total_platform_fee, 2),
-        "total_bookings": len(bookings)
+        "total_bookings": total_bookings,
     }
 
 class PayoutRequestCreate(BaseModel):
@@ -290,26 +358,35 @@ async def create_payout_request(req: PayoutRequestCreate):
     if req.amount <= 0:
         raise HTTPException(status_code=400, detail="Amount must be positive")
 
-    bookings = await db.bookings.find({"host_id": req.host_id}, {"_id": 0}).to_list(1000)
-    total_payout = sum(b.get("host_payout", 0) for b in bookings)
-    payouts = await db.payout_requests.find({"host_id": req.host_id}, {"_id": 0}).to_list(1000)
-    withdrawn = sum(p.get("amount", 0) for p in payouts if p.get("status") in ("pending", "paid"))
-    available = total_payout - withdrawn
+    lock = await _host_payout_lock(req.host_id)
+    async with lock:
+        match = {"host_id": req.host_id}
+        total_payout = await _sum_field(db.bookings, match, "host_payout")
+        pending_payouts = await _sum_field(
+            db.payout_requests, {"host_id": req.host_id, "status": "pending"}, "amount"
+        )
+        paid_payouts = await _sum_field(
+            db.payout_requests, {"host_id": req.host_id, "status": "paid"}, "amount"
+        )
+        available = total_payout - pending_payouts - paid_payouts
 
-    if req.amount > available + 0.01:
-        raise HTTPException(status_code=400, detail=f"Requested amount exceeds available balance of SGD {available:.2f}")
+        if req.amount > available + 0.01:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Requested amount exceeds available balance of SGD {available:.2f}",
+            )
 
-    payout = {
-        "id": str(uuid.uuid4()),
-        "host_id": req.host_id,
-        "amount": round(req.amount, 2),
-        "status": "pending",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "paid_at": None,
-    }
-    await db.payout_requests.insert_one(payout)
-    payout.pop("_id", None)
-    return payout
+        payout = {
+            "id": str(uuid.uuid4()),
+            "host_id": req.host_id,
+            "amount": round(req.amount, 2),
+            "status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "paid_at": None,
+        }
+        await db.payout_requests.insert_one(payout)
+        payout.pop("_id", None)
+        return payout
 
 @api_router.get("/host/payouts")
 async def list_host_payouts(host_id: str = "user-host-001"):
@@ -356,7 +433,10 @@ async def create_review(req: ReviewCreate):
         "comment": req.comment.strip(),
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
-    await db.reviews.insert_one(review)
+    try:
+        await db.reviews.insert_one(review)
+    except DuplicateKeyError:
+        raise HTTPException(status_code=400, detail="Review already submitted for this booking")
     review.pop("_id", None)
     return review
 
@@ -381,11 +461,17 @@ async def list_reviews(property_id: Optional[str] = None, user_id: Optional[str]
 
 @api_router.get("/properties/{property_id}/rating")
 async def get_property_rating(property_id: str):
-    reviews = await db.reviews.find({"property_id": property_id}, {"_id": 0}).to_list(1000)
-    if not reviews:
+    pipeline = [
+        {"$match": {"property_id": property_id}},
+        {"$group": {"_id": None, "avg": {"$avg": "$rating"}, "count": {"$sum": 1}}},
+    ]
+    rows = await db.reviews.aggregate(pipeline).to_list(1)
+    if not rows:
         return {"average_rating": None, "review_count": 0}
-    avg = sum(r["rating"] for r in reviews) / len(reviews)
-    return {"average_rating": round(avg, 1), "review_count": len(reviews)}
+    return {
+        "average_rating": round(float(rows[0]["avg"]), 1),
+        "review_count": int(rows[0]["count"]),
+    }
 
 class ReviewReplyCreate(BaseModel):
     reply: str
@@ -471,31 +557,32 @@ async def ai_chat_stream(request: ChatRequest):
     )
 
     async def generate_stream():
-        try:
-            api_key = os.environ.get("GROQ_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
-            model = os.environ.get("GROQ_MODEL") or "llama-3.3-70b-versatile"
-            chat = LlmChat(
-                api_key=api_key,
-                session_id=f"session-{request.user_id}",
-                system_message=system_message,
-            ).with_model("groq", model)
+        async with AI_SEM:
+            try:
+                api_key = os.environ.get("GROQ_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
+                model = os.environ.get("GROQ_MODEL") or "llama-3.3-70b-versatile"
+                chat = LlmChat(
+                    api_key=api_key,
+                    session_id=f"session-{request.user_id}",
+                    system_message=system_message,
+                ).with_model("groq", model)
 
-            # Last ~12 turns keep context without blowing the token window
-            history = [
-                {"role": t.role, "content": t.content}
-                for t in (request.history or [])[-12:]
-                if t.role in ("user", "assistant") and (t.content or "").strip()
-            ]
-            user_message = UserMessage(text=request.message)
+                # Last ~12 turns keep context without blowing the token window
+                history = [
+                    {"role": t.role, "content": t.content}
+                    for t in (request.history or [])[-12:]
+                    if t.role in ("user", "assistant") and (t.content or "").strip()
+                ]
+                user_message = UserMessage(text=request.message)
 
-            async for event in chat.stream_message(user_message, history=history):
-                if isinstance(event, TextDelta):
-                    yield f"data: {json.dumps({'content': event.content})}\n\n"
-                elif isinstance(event, StreamDone):
-                    yield f"data: {json.dumps({'done': True})}\n\n"
-                    break
-        except Exception as e:
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+                async for event in chat.stream_message(user_message, history=history):
+                    if isinstance(event, TextDelta):
+                        yield f"data: {json.dumps({'content': event.content})}\n\n"
+                    elif isinstance(event, StreamDone):
+                        yield f"data: {json.dumps({'done': True})}\n\n"
+                        break
+            except Exception as e:
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
     return StreamingResponse(
         generate_stream(),
@@ -524,49 +611,54 @@ async def create_checkout(req: CheckoutRequest):
     amount_cents = int(round(total_price * 100))
 
     try:
-        session = stripe.checkout.Session.create(
-            line_items=[{
-                "price_data": {
-                    "currency": "sgd",
-                    "product_data": {
-                        "name": prop["name"],
-                        "description": f"{nights} night(s) in {prop['city']} - {req.guests} guest(s)",
+        session = await asyncio.to_thread(
+            lambda: stripe.checkout.Session.create(
+                line_items=[{
+                    "price_data": {
+                        "currency": "sgd",
+                        "product_data": {
+                            "name": prop["name"],
+                            "description": f"{nights} night(s) in {prop['city']} - {req.guests} guest(s)",
+                        },
+                        "unit_amount": amount_cents,
                     },
-                    "unit_amount": amount_cents,
+                    "quantity": 1,
+                }],
+                mode="payment",
+                success_url=f"{req.origin_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=f"{req.origin_url}/payment/cancel",
+                metadata={
+                    "property_id": req.property_id,
+                    "user_id": req.user_id,
+                    "check_in": req.check_in,
+                    "check_out": req.check_out,
+                    "guests": str(req.guests),
+                    "nights": str(nights),
+                    "host_id": prop["host_id"],
                 },
-                "quantity": 1,
-            }],
-            mode="payment",
-            success_url=f"{req.origin_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{req.origin_url}/payment/cancel",
-            metadata={
-                "property_id": req.property_id,
-                "user_id": req.user_id,
-                "check_in": req.check_in,
-                "check_out": req.check_out,
-                "guests": str(req.guests),
-                "nights": str(nights),
-                "host_id": prop["host_id"],
-            },
+            )
         )
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=500, detail=f"Stripe error: {str(e)}")
 
-    await db.payment_transactions.insert_one({
-        "session_id": session.id,
-        "user_id": req.user_id,
-        "property_id": req.property_id,
-        "amount": total_price,
-        "currency": "sgd",
-        "nights": nights,
-        "check_in": req.check_in,
-        "check_out": req.check_out,
-        "guests": req.guests,
-        "status": "initiated",
-        "payment_status": "pending",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-    })
+    try:
+        await db.payment_transactions.insert_one({
+            "session_id": session.id,
+            "user_id": req.user_id,
+            "property_id": req.property_id,
+            "amount": total_price,
+            "currency": "sgd",
+            "nights": nights,
+            "check_in": req.check_in,
+            "check_out": req.check_out,
+            "guests": req.guests,
+            "status": "initiated",
+            "payment_status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        })
+    except DuplicateKeyError:
+        pass
 
     return {"checkout_url": session.url, "session_id": session.id}
 
@@ -578,7 +670,7 @@ async def get_payment_status(session_id: str):
 
     if record.get("payment_status") != "paid":
         try:
-            s = stripe.checkout.Session.retrieve(session_id)
+            s = await asyncio.to_thread(stripe.checkout.Session.retrieve, session_id)
             if s.payment_status == "paid" or s.status == "complete":
                 await db.payment_transactions.update_one(
                     {"session_id": session_id, "payment_status": {"$ne": "paid"}},
@@ -631,14 +723,20 @@ async def _create_booking_from_session(session_id: str):
     doc = booking.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
     doc['stripe_session_id'] = session_id
-    await db.bookings.insert_one(doc)
+    try:
+        await db.bookings.insert_one(doc)
+    except DuplicateKeyError:
+        # Webhook + status poll raced; unique index on stripe_session_id wins
+        return
 
 @api_router.post("/stripe/webhook")
 async def stripe_webhook(request: Request):
     payload = await request.body()
     sig = request.headers.get("stripe-signature", "")
     try:
-        event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK_SECRET)
+        event = await asyncio.to_thread(
+            stripe.Webhook.construct_event, payload, sig, STRIPE_WEBHOOK_SECRET
+        )
     except stripe.error.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Invalid signature")
 
@@ -874,6 +972,8 @@ DEMO_BOOKINGS = [
 
 @app.on_event("startup")
 async def seed_data():
+    await ensure_indexes()
+
     # Upsert by id so existing DBs (local + Atlas) still get new cities like Bangkok
     now = datetime.now(timezone.utc).isoformat()
     for prop in DEMO_PROPERTIES:
@@ -885,10 +985,9 @@ async def seed_data():
         )
 
     for booking in DEMO_BOOKINGS:
-        # Full $set upsert — avoid $setOnInsert+$set same-path conflict
         await db.bookings.update_one(
             {"id": booking["id"]},
-            {"$set": booking},
+            {"$setOnInsert": booking},
             upsert=True,
         )
-    logger.info("Demo properties & bookings ensured")
+    logger.info("Demo properties & bookings ensured (indexes ready)")

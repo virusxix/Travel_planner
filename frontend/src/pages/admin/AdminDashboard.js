@@ -38,7 +38,7 @@ export default function AdminDashboard({ user }) {
       const [overviewRes, bookingsRes, propsRes] = await Promise.all([
         axios.get(`${API}/admin/overview`),
         axios.get(`${API}/bookings`),
-        axios.get(`${API}/properties?status=all`),
+        axios.get(`${API}/admin/properties`),
       ]);
       setOverview(overviewRes.data);
       setBookings(bookingsRes.data || []);
