@@ -8,7 +8,9 @@ services:
     plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 75
+    # Keep 1 worker on free plan. Stripe/AI are off the event-loop block path;
+    # do not add --workers N until payout locks move to Mongo transactions.
     healthCheckPath: /api/
     envVars:
       - key: PYTHON_VERSION
